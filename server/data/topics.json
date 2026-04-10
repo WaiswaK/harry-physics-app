@@ -1,0 +1,278 @@
+[
+  {
+    "id": "linear-motion",
+    "title": "Linear Motion Basics",
+    "slug": "linear-motion",
+    "level": "Senior 1",
+    "duration": "12 min",
+    "category": "Mechanics",
+    "summary": "Study distance, displacement, speed, and velocity using everyday motion examples and adjustable values.",
+    "objectives": [
+      "Differentiate distance from displacement",
+      "Use velocity and acceleration in a straight-line motion model",
+      "Interpret how changing time affects motion"
+    ],
+    "lesson": {
+      "overview": "Linear motion explains how an object moves along a straight path. Students begin with familiar examples like walking to school, a taxi on a road, or a bicycle on a straight stretch.",
+      "concepts": [
+        "Distance is the total path covered, while displacement is the straight-line change in position.",
+        "Velocity describes both speed and direction of motion.",
+        "Acceleration tells us how quickly velocity changes."
+      ],
+      "activities": [
+        "Observe how displacement changes when initial velocity increases.",
+        "Compare motion with positive and negative acceleration.",
+        "Predict final velocity before checking the simulation output."
+      ]
+    },
+    "simulation": {
+      "type": "kinematics",
+      "title": "Kinematics Sandbox",
+      "description": "Change the initial velocity, acceleration, and elapsed time to see how motion values respond.",
+      "formulaNote": "Uses s = ut + 1/2at² and v = u + at for constant acceleration.",
+      "controls": [
+        {
+          "id": "initialVelocity",
+          "label": "Initial velocity",
+          "unit": "m/s",
+          "min": 0,
+          "max": 20,
+          "step": 1,
+          "defaultValue": 6
+        },
+        {
+          "id": "acceleration",
+          "label": "Acceleration",
+          "unit": "m/s²",
+          "min": -5,
+          "max": 10,
+          "step": 1,
+          "defaultValue": 2
+        },
+        {
+          "id": "time",
+          "label": "Time",
+          "unit": "s",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "defaultValue": 4
+        }
+      ]
+    },
+    "quiz": {
+      "title": "Linear Motion Check",
+      "questions": [
+        {
+          "id": 1,
+          "prompt": "A bicycle moves 20 m in 4 s. What is its speed?",
+          "options": ["4 m/s", "5 m/s", "6 m/s", "24 m/s"],
+          "answer": "5 m/s",
+          "explanation": "Speed is distance divided by time, so 20 / 4 = 5 m/s."
+        },
+        {
+          "id": 2,
+          "prompt": "If acceleration is positive, what happens to velocity over time?",
+          "options": [
+            "It must stay at zero",
+            "It decreases only",
+            "It changes in the positive direction",
+            "It becomes distance"
+          ],
+          "answer": "It changes in the positive direction",
+          "explanation": "Acceleration measures the change in velocity each second."
+        }
+      ]
+    }
+  },
+  {
+    "id": "forces-and-acceleration",
+    "title": "Forces and Acceleration",
+    "slug": "forces-and-acceleration",
+    "level": "Senior 2",
+    "duration": "15 min",
+    "category": "Mechanics",
+    "summary": "Explore how changing force or mass affects acceleration in Newton's second law.",
+    "objectives": [
+      "Explain balanced and unbalanced forces",
+      "Use F = ma to calculate acceleration",
+      "Compare the effect of changing mass versus changing force"
+    ],
+    "lesson": {
+      "overview": "Newton's second law links force, mass, and acceleration. When a larger force acts on the same mass, acceleration increases. For the same force, increasing mass reduces acceleration.",
+      "concepts": [
+        "Resultant force is the overall force acting on an object.",
+        "Acceleration increases with force when mass stays constant.",
+        "Acceleration decreases with mass when force stays constant."
+      ],
+      "activities": [
+        "Increase force and observe the acceleration response.",
+        "Double the mass and compare the new acceleration.",
+        "Discuss examples like pushing a wheelbarrow or starting a motorcycle."
+      ]
+    },
+    "simulation": {
+      "type": "newton-second-law",
+      "title": "Force and Mass Lab",
+      "description": "Adjust force and mass to see how acceleration changes.",
+      "formulaNote": "Uses a = F / m and estimates velocity change with v = at over the chosen time.",
+      "controls": [
+        {
+          "id": "force",
+          "label": "Force",
+          "unit": "N",
+          "min": 1,
+          "max": 100,
+          "step": 1,
+          "defaultValue": 24
+        },
+        {
+          "id": "mass",
+          "label": "Mass",
+          "unit": "kg",
+          "min": 1,
+          "max": 20,
+          "step": 1,
+          "defaultValue": 6
+        },
+        {
+          "id": "time",
+          "label": "Time",
+          "unit": "s",
+          "min": 1,
+          "max": 10,
+          "step": 1,
+          "defaultValue": 3
+        }
+      ]
+    },
+    "quiz": {
+      "title": "Forces Check",
+      "questions": [
+        {
+          "id": 1,
+          "prompt": "What happens to acceleration if force doubles and mass stays the same?",
+          "options": [
+            "Acceleration halves",
+            "Acceleration doubles",
+            "Acceleration stays the same",
+            "Acceleration becomes zero"
+          ],
+          "answer": "Acceleration doubles",
+          "explanation": "From F = ma, acceleration is directly proportional to force."
+        },
+        {
+          "id": 2,
+          "prompt": "A 12 N force acts on a 3 kg object. What is the acceleration?",
+          "options": ["2 m/s²", "3 m/s²", "4 m/s²", "9 m/s²"],
+          "answer": "4 m/s²",
+          "explanation": "Acceleration is force divided by mass, so 12 / 3 = 4 m/s²."
+        }
+      ]
+    }
+  },
+  {
+    "id": "work-energy-power",
+    "title": "Work, Energy, and Power",
+    "slug": "work-energy-power",
+    "level": "Senior 3",
+    "duration": "14 min",
+    "category": "Energy",
+    "summary": "Calculate work, kinetic energy, and power from motion and force values.",
+    "objectives": [
+      "Calculate work done from force and distance",
+      "Relate kinetic energy to mass and velocity",
+      "Explain power as the rate of doing work"
+    ],
+    "lesson": {
+      "overview": "Work, energy, and power help explain how effort changes systems. Students connect formulas to lifting loads, moving carts, and operating machines.",
+      "concepts": [
+        "Work done depends on force and displacement.",
+        "Kinetic energy increases rapidly as velocity increases.",
+        "Power tells us how quickly work is done."
+      ],
+      "activities": [
+        "Change force and compare the work done.",
+        "Increase velocity to see how kinetic energy changes.",
+        "Discuss which machine does more work in less time."
+      ]
+    },
+    "simulation": {
+      "type": "work-energy",
+      "title": "Energy Explorer",
+      "description": "Adjust force, distance, mass, velocity, and time to compare work, energy, and power.",
+      "formulaNote": "Uses W = Fd, KE = 1/2mv², and P = W/t.",
+      "controls": [
+        {
+          "id": "force",
+          "label": "Force",
+          "unit": "N",
+          "min": 1,
+          "max": 100,
+          "step": 1,
+          "defaultValue": 20
+        },
+        {
+          "id": "distance",
+          "label": "Distance",
+          "unit": "m",
+          "min": 1,
+          "max": 50,
+          "step": 1,
+          "defaultValue": 8
+        },
+        {
+          "id": "mass",
+          "label": "Mass",
+          "unit": "kg",
+          "min": 1,
+          "max": 30,
+          "step": 1,
+          "defaultValue": 5
+        },
+        {
+          "id": "velocity",
+          "label": "Velocity",
+          "unit": "m/s",
+          "min": 1,
+          "max": 20,
+          "step": 1,
+          "defaultValue": 6
+        },
+        {
+          "id": "time",
+          "label": "Time",
+          "unit": "s",
+          "min": 1,
+          "max": 20,
+          "step": 1,
+          "defaultValue": 4
+        }
+      ]
+    },
+    "quiz": {
+      "title": "Energy Check",
+      "questions": [
+        {
+          "id": 1,
+          "prompt": "If a 10 N force moves an object 6 m, what work is done?",
+          "options": ["16 J", "40 J", "60 J", "600 J"],
+          "answer": "60 J",
+          "explanation": "Work equals force times distance, so 10 x 6 = 60 J."
+        },
+        {
+          "id": 2,
+          "prompt": "Which change increases kinetic energy the most?",
+          "options": [
+            "Halving the mass",
+            "Doubling the velocity",
+            "Halving the distance",
+            "Doubling the time"
+          ],
+          "answer": "Doubling the velocity",
+          "explanation": "Kinetic energy depends on the square of velocity, so velocity changes have a strong effect."
+        }
+      ]
+    }
+  }
+]
