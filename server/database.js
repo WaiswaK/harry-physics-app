@@ -2,6 +2,27 @@ const crypto = require("crypto");
 const { Pool } = require("pg");
 const { topics: seedTopics, users: seedUsers } = require("./seedData");
 
+function normalizeConnectionString(connectionString = "") {
+  try {
+    const url = new URL(connectionString);
+    const sslMode = (url.searchParams.get("sslmode") || "").toLowerCase();
+    const useLibpqCompat = (url.searchParams.get("uselibpqcompat") || "").toLowerCase();
+
+    if (useLibpqCompat === "true") {
+      return connectionString;
+    }
+
+    if (["prefer", "require", "verify-ca"].includes(sslMode)) {
+      url.searchParams.set("sslmode", "verify-full");
+      return url.toString();
+    }
+
+    return connectionString;
+  } catch {
+    return connectionString;
+  }
+}
+
 function requiresSsl(connectionString = "") {
   try {
     const url = new URL(connectionString);
@@ -25,13 +46,15 @@ function buildDatabaseLabel() {
   }
 }
 
+const databaseUrl = normalizeConnectionString(process.env.DATABASE_URL || "");
+
 const shouldUseSsl =
   process.env.PGSSL === "require" ||
-  (process.env.DATABASE_URL ? requiresSsl(process.env.DATABASE_URL) : false);
+  (databaseUrl ? requiresSsl(databaseUrl) : false);
 
-const connectionConfig = process.env.DATABASE_URL
+const connectionConfig = databaseUrl
   ? {
-      connectionString: process.env.DATABASE_URL,
+      connectionString: databaseUrl,
       ssl: shouldUseSsl
         ? {
             rejectUnauthorized: false,
