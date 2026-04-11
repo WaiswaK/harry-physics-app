@@ -23,8 +23,22 @@ const {
 } = require("./database");
 
 const app = express();
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origin not allowed by CORS"));
+    },
+  }),
+);
 app.use(express.json({ limit: "1mb" }));
 
 function asyncHandler(handler) {
@@ -300,13 +314,22 @@ app.use((error, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
+const ready = ensureDatabase();
 
 async function startServer() {
-  await ensureDatabase();
+  await ready;
   app.listen(PORT, () => console.log(`Server running on ${PORT}`));
 }
 
-startServer().catch((error) => {
-  console.error("Failed to start server", error);
-  process.exit(1);
-});
+if (require.main === module) {
+  startServer().catch((error) => {
+    console.error("Failed to start server", error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  app,
+  ready,
+  startServer,
+};

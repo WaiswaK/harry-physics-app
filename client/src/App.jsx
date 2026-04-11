@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 const AUTH_STORAGE_KEY = 'harry-physics-auth-token'
 
 const simulationControlTemplates = {
@@ -399,15 +399,6 @@ function App() {
   const selectedSummary = topics.find((topic) => topic.id === selectedTopicId)
   const currentProgress = studentProgress.find((item) => item.topicId === selectedTopicId)
 
-  const seededAccounts = [
-    'Admin: admin / admin123',
-    'Student: aisha / student123',
-    'Student: brian / student123',
-    'Student: claire / student123',
-    'Student: daniel / student123',
-    'Student: esther / student123',
-  ]
-
   async function refreshTopics(focusTopicId) {
     const topicList = await fetchJson('/api/topics')
     setTopics(topicList)
@@ -729,14 +720,6 @@ function App() {
             {loginMessage ? <p className="info-banner success">{loginMessage}</p> : null}
             {loginError ? <p className="info-banner error">{loginError}</p> : null}
 
-            <div className="seeded-box">
-              <p className="subtle-title">Seeded accounts</p>
-              <ul className="check-list compact">
-                {seededAccounts.map((account) => (
-                  <li key={account}>{account}</li>
-                ))}
-              </ul>
-            </div>
           </div>
         </div>
       </section>
