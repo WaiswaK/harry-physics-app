@@ -1,95 +1,245 @@
-import { useEffect, useMemo, useState } from 'react'
-import './App.css'
+import { useEffect, useMemo, useState } from "react";
+import "./App.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
-const AUTH_STORAGE_KEY = 'harry-physics-auth-token'
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+const AUTH_STORAGE_KEY = "harry-physics-auth-token";
 
 const simulationControlTemplates = {
   kinematics: [
-    { id: 'initialVelocity', label: 'Initial velocity', unit: 'm/s', min: 0, max: 20, step: 1, defaultValue: 6 },
-    { id: 'acceleration', label: 'Acceleration', unit: 'm/s²', min: -5, max: 10, step: 1, defaultValue: 2 },
-    { id: 'time', label: 'Time', unit: 's', min: 1, max: 10, step: 1, defaultValue: 4 },
+    {
+      id: "initialVelocity",
+      label: "Initial velocity",
+      unit: "m/s",
+      min: 0,
+      max: 20,
+      step: 1,
+      defaultValue: 6,
+    },
+    {
+      id: "acceleration",
+      label: "Acceleration",
+      unit: "m/s²",
+      min: -5,
+      max: 10,
+      step: 1,
+      defaultValue: 2,
+    },
+    {
+      id: "time",
+      label: "Time",
+      unit: "s",
+      min: 1,
+      max: 10,
+      step: 1,
+      defaultValue: 4,
+    },
   ],
-  'newton-second-law': [
-    { id: 'force', label: 'Force', unit: 'N', min: 1, max: 100, step: 1, defaultValue: 24 },
-    { id: 'mass', label: 'Mass', unit: 'kg', min: 1, max: 20, step: 1, defaultValue: 6 },
-    { id: 'time', label: 'Time', unit: 's', min: 1, max: 10, step: 1, defaultValue: 3 },
+  "newton-second-law": [
+    {
+      id: "force",
+      label: "Force",
+      unit: "N",
+      min: 1,
+      max: 100,
+      step: 1,
+      defaultValue: 24,
+    },
+    {
+      id: "mass",
+      label: "Mass",
+      unit: "kg",
+      min: 1,
+      max: 20,
+      step: 1,
+      defaultValue: 6,
+    },
+    {
+      id: "time",
+      label: "Time",
+      unit: "s",
+      min: 1,
+      max: 10,
+      step: 1,
+      defaultValue: 3,
+    },
   ],
-  'work-energy': [
-    { id: 'force', label: 'Force', unit: 'N', min: 1, max: 100, step: 1, defaultValue: 20 },
-    { id: 'distance', label: 'Distance', unit: 'm', min: 1, max: 50, step: 1, defaultValue: 8 },
-    { id: 'mass', label: 'Mass', unit: 'kg', min: 1, max: 30, step: 1, defaultValue: 5 },
-    { id: 'velocity', label: 'Velocity', unit: 'm/s', min: 1, max: 20, step: 1, defaultValue: 6 },
-    { id: 'time', label: 'Time', unit: 's', min: 1, max: 20, step: 1, defaultValue: 4 },
+  "work-energy": [
+    {
+      id: "force",
+      label: "Force",
+      unit: "N",
+      min: 1,
+      max: 100,
+      step: 1,
+      defaultValue: 20,
+    },
+    {
+      id: "distance",
+      label: "Distance",
+      unit: "m",
+      min: 1,
+      max: 50,
+      step: 1,
+      defaultValue: 8,
+    },
+    {
+      id: "mass",
+      label: "Mass",
+      unit: "kg",
+      min: 1,
+      max: 30,
+      step: 1,
+      defaultValue: 5,
+    },
+    {
+      id: "velocity",
+      label: "Velocity",
+      unit: "m/s",
+      min: 1,
+      max: 20,
+      step: 1,
+      defaultValue: 6,
+    },
+    {
+      id: "time",
+      label: "Time",
+      unit: "s",
+      min: 1,
+      max: 20,
+      step: 1,
+      defaultValue: 4,
+    },
   ],
   pressure: [
-    { id: 'density', label: 'Density', unit: 'kg/m³', min: 500, max: 1500, step: 50, defaultValue: 1000 },
-    { id: 'gravity', label: 'Gravity', unit: 'm/s²', min: 8, max: 12, step: 0.5, defaultValue: 10 },
-    { id: 'depth', label: 'Depth', unit: 'm', min: 1, max: 20, step: 1, defaultValue: 5 },
+    {
+      id: "density",
+      label: "Density",
+      unit: "kg/m³",
+      min: 500,
+      max: 1500,
+      step: 50,
+      defaultValue: 1000,
+    },
+    {
+      id: "gravity",
+      label: "Gravity",
+      unit: "m/s²",
+      min: 8,
+      max: 12,
+      step: 0.5,
+      defaultValue: 10,
+    },
+    {
+      id: "depth",
+      label: "Depth",
+      unit: "m",
+      min: 1,
+      max: 20,
+      step: 1,
+      defaultValue: 5,
+    },
   ],
   circuits: [
-    { id: 'voltage', label: 'Voltage', unit: 'V', min: 1, max: 24, step: 1, defaultValue: 12 },
-    { id: 'resistance', label: 'Resistance', unit: 'ohms', min: 1, max: 20, step: 1, defaultValue: 6 },
+    {
+      id: "voltage",
+      label: "Voltage",
+      unit: "V",
+      min: 1,
+      max: 24,
+      step: 1,
+      defaultValue: 12,
+    },
+    {
+      id: "resistance",
+      label: "Resistance",
+      unit: "ohms",
+      min: 1,
+      max: 20,
+      step: 1,
+      defaultValue: 6,
+    },
   ],
   waves: [
-    { id: 'frequency', label: 'Frequency', unit: 'Hz', min: 1, max: 20, step: 1, defaultValue: 5 },
-    { id: 'wavelength', label: 'Wavelength', unit: 'm', min: 1, max: 12, step: 1, defaultValue: 4 },
+    {
+      id: "frequency",
+      label: "Frequency",
+      unit: "Hz",
+      min: 1,
+      max: 20,
+      step: 1,
+      defaultValue: 5,
+    },
+    {
+      id: "wavelength",
+      label: "Wavelength",
+      unit: "m",
+      min: 1,
+      max: 12,
+      step: 1,
+      defaultValue: 4,
+    },
   ],
-}
+};
 
 const starterQuizTemplate = [
   {
     id: 1,
-    prompt: 'Write the first question prompt here.',
-    options: ['Option A', 'Option B', 'Option C', 'Option D'],
-    answer: 'Option A',
-    explanation: 'Explain why this answer is correct.',
+    prompt: "Write the first question prompt here.",
+    options: ["Option A", "Option B", "Option C", "Option D"],
+    answer: "Option A",
+    explanation: "Explain why this answer is correct.",
   },
   {
     id: 2,
-    prompt: 'Write the second question prompt here.',
-    options: ['Option A', 'Option B', 'Option C', 'Option D'],
-    answer: 'Option B',
-    explanation: 'Add a short remediation note here.',
+    prompt: "Write the second question prompt here.",
+    options: ["Option A", "Option B", "Option C", "Option D"],
+    answer: "Option B",
+    explanation: "Add a short remediation note here.",
   },
-]
+];
 
 function StatCard({ label, value, accent = false }) {
   return (
     <article className="stat-card">
       <span className="stat-label">{label}</span>
-      <strong className={accent ? 'stat-value accent' : 'stat-value'}>{value}</strong>
+      <strong className={accent ? "stat-value accent" : "stat-value"}>
+        {value}
+      </strong>
     </article>
-  )
+  );
 }
 
 function buildDefaultSimulationValues(controls = []) {
   return controls.reduce((values, control) => {
-    values[control.id] = Number(control.defaultValue ?? control.min ?? 0)
-    return values
-  }, {})
+    values[control.id] = Number(control.defaultValue ?? control.min ?? 0);
+    return values;
+  }, {});
 }
 
 function createEmptyAdminForm() {
   return {
-    id: '',
-    title: '',
-    level: 'Senior 1',
-    duration: '10 min',
-    category: 'Mechanics',
-    summary: '',
-    objectivesText: '',
-    lessonOverview: '',
-    lessonConceptsText: '',
-    lessonActivitiesText: '',
-    simulationType: 'kinematics',
-    simulationTitle: '',
-    simulationDescription: '',
-    simulationFormulaNote: '',
-    simulationControls: JSON.stringify(simulationControlTemplates.kinematics, null, 2),
-    quizTitle: '',
+    id: "",
+    title: "",
+    level: "Senior 1",
+    duration: "10 min",
+    category: "Mechanics",
+    summary: "",
+    objectivesText: "",
+    lessonOverview: "",
+    lessonConceptsText: "",
+    lessonActivitiesText: "",
+    simulationType: "kinematics",
+    simulationTitle: "",
+    simulationDescription: "",
+    simulationFormulaNote: "",
+    simulationControls: JSON.stringify(
+      simulationControlTemplates.kinematics,
+      null,
+      2,
+    ),
+    quizTitle: "",
     quizQuestions: JSON.stringify(starterQuizTemplate, null, 2),
-  }
+  };
 }
 
 function serializeTopicToForm(topic) {
@@ -100,41 +250,41 @@ function serializeTopicToForm(topic) {
     duration: topic.duration,
     category: topic.category,
     summary: topic.summary,
-    objectivesText: topic.objectives.join('\n'),
+    objectivesText: topic.objectives.join("\n"),
     lessonOverview: topic.lesson.overview,
-    lessonConceptsText: topic.lesson.concepts.join('\n'),
-    lessonActivitiesText: topic.lesson.activities.join('\n'),
+    lessonConceptsText: topic.lesson.concepts.join("\n"),
+    lessonActivitiesText: topic.lesson.activities.join("\n"),
     simulationType: topic.simulation.type,
     simulationTitle: topic.simulation.title,
     simulationDescription: topic.simulation.description,
-    simulationFormulaNote: topic.simulation.formulaNote || '',
+    simulationFormulaNote: topic.simulation.formulaNote || "",
     simulationControls: JSON.stringify(topic.simulation.controls, null, 2),
     quizTitle: topic.quiz.title,
     quizQuestions: JSON.stringify(topic.quiz.questions, null, 2),
-  }
+  };
 }
 
 function parseMultilineText(value) {
   return value
-    .split('\n')
+    .split("\n")
     .map((item) => item.trim())
-    .filter(Boolean)
+    .filter(Boolean);
 }
 
 function buildTopicPayload(formState) {
-  let parsedControls
-  let parsedQuestions
+  let parsedControls;
+  let parsedQuestions;
 
   try {
-    parsedControls = JSON.parse(formState.simulationControls)
+    parsedControls = JSON.parse(formState.simulationControls);
   } catch {
-    throw new Error('Simulation controls must be valid JSON.')
+    throw new Error("Simulation controls must be valid JSON.");
   }
 
   try {
-    parsedQuestions = JSON.parse(formState.quizQuestions)
+    parsedQuestions = JSON.parse(formState.quizQuestions);
   } catch {
-    throw new Error('Quiz questions must be valid JSON.')
+    throw new Error("Quiz questions must be valid JSON.");
   }
 
   return {
@@ -160,107 +310,124 @@ function buildTopicPayload(formState) {
       title: formState.quizTitle,
       questions: parsedQuestions,
     },
-  }
+  };
 }
 
 function calculateSimulation(topic, values) {
   if (!topic?.simulation) {
-    return []
+    return [];
   }
 
   switch (topic.simulation.type) {
-    case 'kinematics': {
-      const initialVelocity = Number(values.initialVelocity || 0)
-      const acceleration = Number(values.acceleration || 0)
-      const time = Number(values.time || 0)
-      const displacement = initialVelocity * time + 0.5 * acceleration * time * time
-      const finalVelocity = initialVelocity + acceleration * time
+    case "kinematics": {
+      const initialVelocity = Number(values.initialVelocity || 0);
+      const acceleration = Number(values.acceleration || 0);
+      const time = Number(values.time || 0);
+      const displacement =
+        initialVelocity * time + 0.5 * acceleration * time * time;
+      const finalVelocity = initialVelocity + acceleration * time;
       return [
-        { label: 'Displacement', value: `${displacement.toFixed(1)} m`, accent: true },
-        { label: 'Final velocity', value: `${finalVelocity.toFixed(1)} m/s` },
-      ]
+        {
+          label: "Displacement",
+          value: `${displacement.toFixed(1)} m`,
+          accent: true,
+        },
+        { label: "Final velocity", value: `${finalVelocity.toFixed(1)} m/s` },
+      ];
     }
 
-    case 'newton-second-law': {
-      const force = Number(values.force || 0)
-      const mass = Math.max(Number(values.mass || 1), 1)
-      const time = Number(values.time || 0)
-      const acceleration = force / mass
-      const velocityGain = acceleration * time
-      const displacement = 0.5 * acceleration * time * time
+    case "newton-second-law": {
+      const force = Number(values.force || 0);
+      const mass = Math.max(Number(values.mass || 1), 1);
+      const time = Number(values.time || 0);
+      const acceleration = force / mass;
+      const velocityGain = acceleration * time;
+      const displacement = 0.5 * acceleration * time * time;
       return [
-        { label: 'Acceleration', value: `${acceleration.toFixed(2)} m/s²`, accent: true },
-        { label: 'Velocity gain', value: `${velocityGain.toFixed(2)} m/s` },
-        { label: 'Distance covered', value: `${displacement.toFixed(2)} m` },
-      ]
+        {
+          label: "Acceleration",
+          value: `${acceleration.toFixed(2)} m/s²`,
+          accent: true,
+        },
+        { label: "Velocity gain", value: `${velocityGain.toFixed(2)} m/s` },
+        { label: "Distance covered", value: `${displacement.toFixed(2)} m` },
+      ];
     }
 
-    case 'work-energy': {
-      const force = Number(values.force || 0)
-      const distance = Number(values.distance || 0)
-      const mass = Number(values.mass || 0)
-      const velocity = Number(values.velocity || 0)
-      const time = Math.max(Number(values.time || 1), 1)
-      const work = force * distance
-      const kineticEnergy = 0.5 * mass * velocity * velocity
-      const power = work / time
+    case "work-energy": {
+      const force = Number(values.force || 0);
+      const distance = Number(values.distance || 0);
+      const mass = Number(values.mass || 0);
+      const velocity = Number(values.velocity || 0);
+      const time = Math.max(Number(values.time || 1), 1);
+      const work = force * distance;
+      const kineticEnergy = 0.5 * mass * velocity * velocity;
+      const power = work / time;
       return [
-        { label: 'Work done', value: `${work.toFixed(1)} J`, accent: true },
-        { label: 'Kinetic energy', value: `${kineticEnergy.toFixed(1)} J` },
-        { label: 'Power', value: `${power.toFixed(1)} W` },
-      ]
+        { label: "Work done", value: `${work.toFixed(1)} J`, accent: true },
+        { label: "Kinetic energy", value: `${kineticEnergy.toFixed(1)} J` },
+        { label: "Power", value: `${power.toFixed(1)} W` },
+      ];
     }
 
-    case 'pressure': {
-      const density = Number(values.density || 0)
-      const gravity = Number(values.gravity || 0)
-      const depth = Number(values.depth || 0)
-      const pressure = density * gravity * depth
+    case "pressure": {
+      const density = Number(values.density || 0);
+      const gravity = Number(values.gravity || 0);
+      const depth = Number(values.depth || 0);
+      const pressure = density * gravity * depth;
       return [
-        { label: 'Pressure', value: `${pressure.toFixed(0)} Pa`, accent: true },
-        { label: 'Depth', value: `${depth.toFixed(1)} m` },
-      ]
+        { label: "Pressure", value: `${pressure.toFixed(0)} Pa`, accent: true },
+        { label: "Depth", value: `${depth.toFixed(1)} m` },
+      ];
     }
 
-    case 'circuits': {
-      const voltage = Number(values.voltage || 0)
-      const resistance = Math.max(Number(values.resistance || 1), 1)
-      const current = voltage / resistance
-      const power = voltage * current
+    case "circuits": {
+      const voltage = Number(values.voltage || 0);
+      const resistance = Math.max(Number(values.resistance || 1), 1);
+      const current = voltage / resistance;
+      const power = voltage * current;
       return [
-        { label: 'Current', value: `${current.toFixed(2)} A`, accent: true },
-        { label: 'Power', value: `${power.toFixed(2)} W` },
-      ]
+        { label: "Current", value: `${current.toFixed(2)} A`, accent: true },
+        { label: "Power", value: `${power.toFixed(2)} W` },
+      ];
     }
 
-    case 'waves': {
-      const frequency = Number(values.frequency || 0)
-      const wavelength = Number(values.wavelength || 0)
-      const speed = frequency * wavelength
-      const period = frequency > 0 ? 1 / frequency : 0
+    case "waves": {
+      const frequency = Number(values.frequency || 0);
+      const wavelength = Number(values.wavelength || 0);
+      const speed = frequency * wavelength;
+      const period = frequency > 0 ? 1 / frequency : 0;
       return [
-        { label: 'Wave speed', value: `${speed.toFixed(2)} m/s`, accent: true },
-        { label: 'Period', value: `${period.toFixed(2)} s` },
-      ]
+        { label: "Wave speed", value: `${speed.toFixed(2)} m/s`, accent: true },
+        { label: "Period", value: `${period.toFixed(2)} s` },
+      ];
     }
 
     default:
-      return [{ label: 'Simulation type', value: topic.simulation.type, accent: true }]
+      return [
+        {
+          label: "Simulation type",
+          value: topic.simulation.type,
+          accent: true,
+        },
+      ];
   }
 }
 
 async function fetchJson(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, options)
-  const contentType = response.headers.get('content-type') || ''
-  const payload = contentType.includes('application/json') ? await response.json() : null
+  const response = await fetch(`${API_BASE_URL}${path}`, options);
+  const contentType = response.headers.get("content-type") || "";
+  const payload = contentType.includes("application/json")
+    ? await response.json()
+    : null;
 
   if (!response.ok) {
-    const error = new Error(payload?.error || 'Request failed.')
-    error.status = response.status
-    throw error
+    const error = new Error(payload?.error || "Request failed.");
+    error.status = response.status;
+    throw error;
   }
 
-  return payload
+  return payload;
 }
 
 function authHeaders(token) {
@@ -268,169 +435,177 @@ function authHeaders(token) {
     ? {
         Authorization: `Bearer ${token}`,
       }
-    : {}
+    : {};
 }
 
 function App() {
-  const [apiMessage, setApiMessage] = useState('Connecting to physics API...')
-  const [apiStatus, setApiStatus] = useState('loading')
-  const [topics, setTopics] = useState([])
-  const [selectedTopicId, setSelectedTopicId] = useState('')
-  const [selectedTopic, setSelectedTopic] = useState(null)
-  const [contentStatus, setContentStatus] = useState('Loading topics...')
-  const [portalView, setPortalView] = useState('learn')
-  const [selectedAnswers, setSelectedAnswers] = useState({})
-  const [quizResult, setQuizResult] = useState(null)
-  const [simulationValues, setSimulationValues] = useState({})
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem(AUTH_STORAGE_KEY) || '')
-  const [currentUser, setCurrentUser] = useState(null)
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' })
-  const [loginError, setLoginError] = useState('')
-  const [loginMessage, setLoginMessage] = useState('')
-  const [studentProgress, setStudentProgress] = useState([])
-  const [studentDirectory, setStudentDirectory] = useState([])
-  const [progressMessage, setProgressMessage] = useState('')
-  const [adminForm, setAdminForm] = useState(createEmptyAdminForm)
-  const [adminMessage, setAdminMessage] = useState('')
-  const [adminError, setAdminError] = useState('')
+  const [apiStatus, setApiStatus] = useState("loading");
+  const [topics, setTopics] = useState([]);
+  const [selectedTopicId, setSelectedTopicId] = useState("");
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [contentStatus, setContentStatus] = useState("Loading topics...");
+  const [portalView, setPortalView] = useState("learn");
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [quizResult, setQuizResult] = useState(null);
+  const [simulationValues, setSimulationValues] = useState({});
+  const [authToken, setAuthToken] = useState(
+    () => localStorage.getItem(AUTH_STORAGE_KEY) || "",
+  );
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [loginError, setLoginError] = useState("");
+  const [loginMessage, setLoginMessage] = useState("");
+  const [studentProgress, setStudentProgress] = useState([]);
+  const [studentDirectory, setStudentDirectory] = useState([]);
+  const [progressMessage, setProgressMessage] = useState("");
+  const [adminForm, setAdminForm] = useState(createEmptyAdminForm);
+  const [adminMessage, setAdminMessage] = useState("");
+  const [adminError, setAdminError] = useState("");
 
-  const isStudent = currentUser?.role === 'student'
-  const isAdmin = currentUser?.role === 'admin'
+  const isStudent = currentUser?.role === "student";
+  const isAdmin = currentUser?.role === "admin";
 
   useEffect(() => {
     async function loadBootData() {
       try {
-        const [hello, topicList] = await Promise.all([fetchJson('/api/hello'), fetchJson('/api/topics')])
-        setApiMessage(hello.message)
-        setApiStatus('online')
-        setTopics(topicList)
-        setContentStatus(`${topicList.length} topics available in the database`)
+        const [, topicList] = await Promise.all([
+          fetchJson("/api/hello"),
+          fetchJson("/api/topics"),
+        ]);
+        setApiStatus("online");
+        setTopics(topicList);
+        setContentStatus(
+          `${topicList.length} topics available in the database`,
+        );
 
         if (topicList.length > 0) {
-          setSelectedTopicId((current) => current || topicList[0].id)
+          setSelectedTopicId((current) => current || topicList[0].id);
         }
       } catch (error) {
-        setApiStatus('offline')
-        setApiMessage('Backend unavailable. Start the Express server on port 4000.')
-        setContentStatus(error.message)
+        setApiStatus("offline");
+        setContentStatus(error.message);
       }
     }
 
-    loadBootData()
-  }, [])
+    loadBootData();
+  }, []);
 
   useEffect(() => {
     if (!selectedTopicId) {
-      return
+      return;
     }
 
     async function loadSelectedTopic() {
       try {
-        const topic = await fetchJson(`/api/topics/${selectedTopicId}`)
-        setSelectedTopic(topic)
-        setSelectedAnswers({})
-        setQuizResult(null)
-        setSimulationValues(buildDefaultSimulationValues(topic.simulation.controls))
+        const topic = await fetchJson(`/api/topics/${selectedTopicId}`);
+        setSelectedTopic(topic);
+        setSelectedAnswers({});
+        setQuizResult(null);
+        setSimulationValues(
+          buildDefaultSimulationValues(topic.simulation.controls),
+        );
       } catch (error) {
-        setContentStatus(error.message)
+        setContentStatus(error.message);
       }
     }
 
-    loadSelectedTopic()
-  }, [selectedTopicId])
+    loadSelectedTopic();
+  }, [selectedTopicId]);
 
   useEffect(() => {
     if (!authToken) {
-      setCurrentUser(null)
-      setStudentProgress([])
-      setStudentDirectory([])
-      localStorage.removeItem(AUTH_STORAGE_KEY)
-      if (portalView !== 'learn') {
-        setPortalView('learn')
+      setCurrentUser(null);
+      setStudentProgress([]);
+      setStudentDirectory([]);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      if (portalView !== "learn") {
+        setPortalView("learn");
       }
-      return
+      return;
     }
 
-    localStorage.setItem(AUTH_STORAGE_KEY, authToken)
+    localStorage.setItem(AUTH_STORAGE_KEY, authToken);
 
     async function loadSessionData() {
       try {
-        const { user } = await fetchJson('/api/auth/me', {
+        const { user } = await fetchJson("/api/auth/me", {
           headers: authHeaders(authToken),
-        })
+        });
 
-        setCurrentUser(user)
-        setLoginError('')
+        setCurrentUser(user);
+        setLoginError("");
 
-        if (user.role === 'student') {
-          const { progress } = await fetchJson('/api/progress/me', {
+        if (user.role === "student") {
+          const { progress } = await fetchJson("/api/progress/me", {
             headers: authHeaders(authToken),
-          })
-          setStudentProgress(progress)
-          setStudentDirectory([])
-          if (portalView === 'admin') {
-            setPortalView('learn')
+          });
+          setStudentProgress(progress);
+          setStudentDirectory([]);
+          if (portalView === "admin") {
+            setPortalView("learn");
           }
         }
 
-        if (user.role === 'admin') {
-          const { students } = await fetchJson('/api/admin/students', {
+        if (user.role === "admin") {
+          const { students } = await fetchJson("/api/admin/students", {
             headers: authHeaders(authToken),
-          })
-          setStudentDirectory(students)
-          setStudentProgress([])
+          });
+          setStudentDirectory(students);
+          setStudentProgress([]);
         }
       } catch (error) {
-        setAuthToken('')
-        setCurrentUser(null)
-        setLoginError(error.message)
+        setAuthToken("");
+        setCurrentUser(null);
+        setLoginError(error.message);
       }
     }
 
-    loadSessionData()
-  }, [authToken, portalView])
+    loadSessionData();
+  }, [authToken, portalView]);
 
   const simulationResults = useMemo(
     () => calculateSimulation(selectedTopic, simulationValues),
     [selectedTopic, simulationValues],
-  )
+  );
 
-  const quizCount = selectedTopic?.quiz?.questions?.length || 0
-  const selectedSummary = topics.find((topic) => topic.id === selectedTopicId)
-  const currentProgress = studentProgress.find((item) => item.topicId === selectedTopicId)
+  const quizCount = selectedTopic?.quiz?.questions?.length || 0;
+  const selectedSummary = topics.find((topic) => topic.id === selectedTopicId);
+  const currentProgress = studentProgress.find(
+    (item) => item.topicId === selectedTopicId,
+  );
 
   async function refreshTopics(focusTopicId) {
-    const topicList = await fetchJson('/api/topics')
-    setTopics(topicList)
-    setContentStatus(`${topicList.length} topics available in the database`)
+    const topicList = await fetchJson("/api/topics");
+    setTopics(topicList);
+    setContentStatus(`${topicList.length} topics available in the database`);
 
     if (focusTopicId) {
-      setSelectedTopicId(focusTopicId)
-      return
+      setSelectedTopicId(focusTopicId);
+      return;
     }
 
     if (!selectedTopicId && topicList[0]) {
-      setSelectedTopicId(topicList[0].id)
+      setSelectedTopicId(topicList[0].id);
     }
   }
 
   async function refreshRoleData(token = authToken, role = currentUser?.role) {
     if (!token || !role) {
-      return
+      return;
     }
 
-    if (role === 'student') {
-      const { progress } = await fetchJson('/api/progress/me', {
+    if (role === "student") {
+      const { progress } = await fetchJson("/api/progress/me", {
         headers: authHeaders(token),
-      })
-      setStudentProgress(progress)
+      });
+      setStudentProgress(progress);
     }
 
-    if (role === 'admin') {
-      const { students } = await fetchJson('/api/admin/students', {
+    if (role === "admin") {
+      const { students } = await fetchJson("/api/admin/students", {
         headers: authHeaders(token),
-      })
-      setStudentDirectory(students)
+      });
+      setStudentDirectory(students);
     }
   }
 
@@ -438,218 +613,234 @@ function App() {
     setSimulationValues((current) => ({
       ...current,
       [controlId]: Number(nextValue),
-    }))
-  }
+    }));
+  };
 
   const handleAnswerSelect = (questionId, option) => {
     if (!isStudent) {
-      return
+      return;
     }
 
-    setSelectedAnswers((current) => ({ ...current, [questionId]: option }))
-    setQuizResult(null)
-  }
+    setSelectedAnswers((current) => ({ ...current, [questionId]: option }));
+    setQuizResult(null);
+  };
 
   const handleLoginSubmit = async (event) => {
-    event.preventDefault()
-    setLoginError('')
-    setLoginMessage('')
+    event.preventDefault();
+    setLoginError("");
+    setLoginMessage("");
 
     try {
-      const payload = await fetchJson('/api/auth/login', {
-        method: 'POST',
+      const payload = await fetchJson("/api/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(loginForm),
-      })
+      });
 
-      setAuthToken(payload.token)
-      setCurrentUser(payload.user)
-      setLoginForm({ username: '', password: '' })
-      setLoginMessage(`Logged in as ${payload.user.name}.`)
-      setPortalView(payload.user.role === 'admin' ? 'admin' : 'learn')
+      setAuthToken(payload.token);
+      setCurrentUser(payload.user);
+      setLoginForm({ username: "", password: "" });
+      setLoginMessage(`Logged in as ${payload.user.name}.`);
+      setPortalView(payload.user.role === "admin" ? "admin" : "learn");
     } catch (error) {
-      setLoginError(error.message)
+      setLoginError(error.message);
     }
-  }
+  };
 
   const handleLogout = async () => {
     try {
       if (authToken) {
-        await fetchJson('/api/auth/logout', {
-          method: 'POST',
+        await fetchJson("/api/auth/logout", {
+          method: "POST",
           headers: authHeaders(authToken),
-        })
+        });
       }
     } catch {
       // Ignore logout cleanup failures and clear local state.
     }
 
-    setAuthToken('')
-    setCurrentUser(null)
-    setLoginMessage('Logged out.')
-    setSelectedAnswers({})
-    setQuizResult(null)
-    setStudentProgress([])
-    setStudentDirectory([])
-  }
+    setAuthToken("");
+    setCurrentUser(null);
+    setLoginMessage("Logged out.");
+    setSelectedAnswers({});
+    setQuizResult(null);
+    setStudentProgress([]);
+    setStudentDirectory([]);
+  };
 
   const handleMarkLessonComplete = async () => {
     if (!isStudent || !selectedTopic) {
-      return
+      return;
     }
 
     try {
-      await fetchJson('/api/progress/lesson-complete', {
-        method: 'POST',
+      await fetchJson("/api/progress/lesson-complete", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...authHeaders(authToken),
         },
         body: JSON.stringify({ topicId: selectedTopic.id }),
-      })
+      });
 
-      await refreshRoleData(authToken, 'student')
-      setProgressMessage(`Saved lesson progress for ${selectedTopic.title}.`)
+      await refreshRoleData(authToken, "student");
+      setProgressMessage(`Saved lesson progress for ${selectedTopic.title}.`);
     } catch (error) {
-      setProgressMessage(error.message)
+      setProgressMessage(error.message);
     }
-  }
+  };
 
   const handleQuizSubmit = async () => {
     if (!isStudent || !selectedTopic) {
-      return
+      return;
     }
 
     try {
-      const result = await fetchJson(`/api/quizzes/${selectedTopic.id}/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders(authToken),
+      const result = await fetchJson(
+        `/api/quizzes/${selectedTopic.id}/submit`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeaders(authToken),
+          },
+          body: JSON.stringify({ answers: selectedAnswers }),
         },
-        body: JSON.stringify({ answers: selectedAnswers }),
-      })
+      );
 
-      setQuizResult(result)
-      await refreshRoleData(authToken, 'student')
-      setProgressMessage(`Recorded quiz attempt for ${selectedTopic.title}.`)
+      setQuizResult(result);
+      await refreshRoleData(authToken, "student");
+      setProgressMessage(`Recorded quiz attempt for ${selectedTopic.title}.`);
     } catch (error) {
-      setProgressMessage(error.message)
+      setProgressMessage(error.message);
     }
-  }
+  };
 
   const handleAdminFieldChange = (event) => {
-    const { name, value } = event.target
-    setAdminForm((current) => ({ ...current, [name]: value }))
-  }
+    const { name, value } = event.target;
+    setAdminForm((current) => ({ ...current, [name]: value }));
+  };
 
   const handleLoadSelectedIntoAdmin = () => {
     if (!selectedTopic || !isAdmin) {
-      return
+      return;
     }
 
-    setAdminForm(serializeTopicToForm(selectedTopic))
-    setPortalView('admin')
-    setAdminMessage(`Loaded ${selectedTopic.title} into the admin editor.`)
-    setAdminError('')
-  }
+    setAdminForm(serializeTopicToForm(selectedTopic));
+    setPortalView("admin");
+    setAdminMessage(`Loaded ${selectedTopic.title} into the admin editor.`);
+    setAdminError("");
+  };
 
   const handleLoadSimulationTemplate = () => {
-    const template = simulationControlTemplates[adminForm.simulationType] || []
+    const template = simulationControlTemplates[adminForm.simulationType] || [];
     setAdminForm((current) => ({
       ...current,
       simulationControls: JSON.stringify(template, null, 2),
-    }))
-  }
+    }));
+  };
 
   const handleAdminTopicPick = async (topicId) => {
     try {
-      const topic = await fetchJson(`/api/topics/${topicId}`)
-      setAdminForm(serializeTopicToForm(topic))
-      setSelectedTopicId(topic.id)
-      setSelectedTopic(topic)
-      setSimulationValues(buildDefaultSimulationValues(topic.simulation.controls))
-      setAdminMessage(`Loaded ${topic.title} into the admin editor.`)
-      setAdminError('')
+      const topic = await fetchJson(`/api/topics/${topicId}`);
+      setAdminForm(serializeTopicToForm(topic));
+      setSelectedTopicId(topic.id);
+      setSelectedTopic(topic);
+      setSimulationValues(
+        buildDefaultSimulationValues(topic.simulation.controls),
+      );
+      setAdminMessage(`Loaded ${topic.title} into the admin editor.`);
+      setAdminError("");
     } catch (error) {
-      setAdminError(error.message)
-      setAdminMessage('')
+      setAdminError(error.message);
+      setAdminMessage("");
     }
-  }
+  };
 
   const handleAdminSubmit = async (mode) => {
-    setAdminError('')
-    setAdminMessage('')
+    setAdminError("");
+    setAdminMessage("");
 
     try {
-      const payload = buildTopicPayload(adminForm)
-      const path = mode === 'create' ? '/api/admin/topics' : `/api/admin/topics/${adminForm.id}`
-      const method = mode === 'create' ? 'POST' : 'PUT'
+      const payload = buildTopicPayload(adminForm);
+      const path =
+        mode === "create"
+          ? "/api/admin/topics"
+          : `/api/admin/topics/${adminForm.id}`;
+      const method = mode === "create" ? "POST" : "PUT";
       const savedTopic = await fetchJson(path, {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...authHeaders(authToken),
         },
         body: JSON.stringify(payload),
-      })
+      });
 
-      await refreshTopics(savedTopic.id)
-      setSelectedTopic(savedTopic)
-      setSimulationValues(buildDefaultSimulationValues(savedTopic.simulation.controls))
-      setAdminForm(serializeTopicToForm(savedTopic))
-      setAdminMessage(mode === 'create' ? `Created ${savedTopic.title}.` : `Updated ${savedTopic.title}.`)
-      await refreshRoleData(authToken, 'admin')
+      await refreshTopics(savedTopic.id);
+      setSelectedTopic(savedTopic);
+      setSimulationValues(
+        buildDefaultSimulationValues(savedTopic.simulation.controls),
+      );
+      setAdminForm(serializeTopicToForm(savedTopic));
+      setAdminMessage(
+        mode === "create"
+          ? `Created ${savedTopic.title}.`
+          : `Updated ${savedTopic.title}.`,
+      );
+      await refreshRoleData(authToken, "admin");
     } catch (error) {
-      setAdminError(error.message)
+      setAdminError(error.message);
     }
-  }
+  };
 
   const handleDeleteTopic = async () => {
     if (!adminForm.id) {
-      return
+      return;
     }
 
-    setAdminError('')
-    setAdminMessage('')
+    setAdminError("");
+    setAdminMessage("");
 
     try {
       await fetchJson(`/api/admin/topics/${adminForm.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: authHeaders(authToken),
-      })
+      });
 
-      setAdminForm(createEmptyAdminForm())
-      await refreshTopics()
-      setAdminMessage('Topic deleted from the database.')
-      await refreshRoleData(authToken, 'admin')
+      setAdminForm(createEmptyAdminForm());
+      await refreshTopics();
+      setAdminMessage("Topic deleted from the database.");
+      await refreshRoleData(authToken, "admin");
     } catch (error) {
-      setAdminError(error.message)
+      setAdminError(error.message);
     }
-  }
+  };
 
   return (
     <main className="page-shell">
       <section className="hero-panel">
         <div className="hero-copy">
           <p className="eyebrow">Harry Physics App</p>
-          <h1>Physics lessons are public. Quizzes and progress stay with logged-in students.</h1>
-          <p className="hero-text">
-            Content now comes from the backend database, with seeded topics, student accounts,
-            progress tracking, and an administrator-only content portal.
-          </p>
+          <h1>
+            Physics lessons are public. Quizzes and progress stay with logged-in
+            students.
+          </h1>
 
           <div className="status-row">
             <span className={`status-pill ${apiStatus}`}>{apiStatus}</span>
-            <span className="status-message">{apiMessage}</span>
           </div>
 
           <div className="stats-grid">
             <StatCard label="Topics in database" value={`${topics.length}`} />
             <StatCard label="Selected quiz items" value={`${quizCount}`} />
-            <StatCard label="Portal access" value={isAdmin ? 'Admin' : isStudent ? 'Student' : 'Guest'} accent />
+            <StatCard
+              label="Portal access"
+              value={isAdmin ? "Admin" : isStudent ? "Student" : "Guest"}
+              accent
+            />
           </div>
         </div>
 
@@ -657,19 +848,27 @@ function App() {
           <p className="card-kicker">Access</p>
           <p className="hero-side-note">{contentStatus}</p>
 
-          <div className="view-switcher" role="tablist" aria-label="App sections">
+          <div
+            className="view-switcher"
+            role="tablist"
+            aria-label="App sections"
+          >
             <button
               type="button"
-              className={portalView === 'learn' ? 'view-button active' : 'view-button'}
-              onClick={() => setPortalView('learn')}
+              className={
+                portalView === "learn" ? "view-button active" : "view-button"
+              }
+              onClick={() => setPortalView("learn")}
             >
               Lessons
             </button>
             {isAdmin ? (
               <button
                 type="button"
-                className={portalView === 'admin' ? 'view-button active' : 'view-button'}
-                onClick={() => setPortalView('admin')}
+                className={
+                  portalView === "admin" ? "view-button active" : "view-button"
+                }
+                onClick={() => setPortalView("admin")}
               >
                 Admin portal
               </button>
@@ -678,13 +877,17 @@ function App() {
 
           <div className="auth-card">
             <div className="auth-summary">
-              <strong>{currentUser ? `${currentUser.name} (${currentUser.role})` : 'Guest access enabled'}</strong>
+              <strong>
+                {currentUser
+                  ? `${currentUser.name} (${currentUser.role})`
+                  : "Guest access enabled"}
+              </strong>
               <span>
                 {currentUser
                   ? isAdmin
-                    ? 'Administrator tools are unlocked.'
-                    : 'Lessons, quizzes, and progress are available.'
-                  : 'Guests can study lessons and simulations without logging in.'}
+                    ? "Administrator tools are unlocked."
+                    : "Lessons, quizzes, and progress are available."
+                  : "Guests can study lessons and simulations without logging in."}
               </span>
             </div>
 
@@ -694,7 +897,10 @@ function App() {
                   placeholder="Username"
                   value={loginForm.username}
                   onChange={(event) =>
-                    setLoginForm((current) => ({ ...current, username: event.target.value }))
+                    setLoginForm((current) => ({
+                      ...current,
+                      username: event.target.value,
+                    }))
                   }
                 />
                 <input
@@ -702,7 +908,10 @@ function App() {
                   placeholder="Password"
                   value={loginForm.password}
                   onChange={(event) =>
-                    setLoginForm((current) => ({ ...current, password: event.target.value }))
+                    setLoginForm((current) => ({
+                      ...current,
+                      password: event.target.value,
+                    }))
                   }
                 />
                 <button type="submit" className="primary-button">
@@ -711,15 +920,22 @@ function App() {
               </form>
             ) : (
               <div className="auth-actions">
-                <button type="button" className="secondary-button" onClick={handleLogout}>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleLogout}
+                >
                   Log out
                 </button>
               </div>
             )}
 
-            {loginMessage ? <p className="info-banner success">{loginMessage}</p> : null}
-            {loginError ? <p className="info-banner error">{loginError}</p> : null}
-
+            {loginMessage ? (
+              <p className="info-banner success">{loginMessage}</p>
+            ) : null}
+            {loginError ? (
+              <p className="info-banner error">{loginError}</p>
+            ) : null}
           </div>
         </div>
       </section>
@@ -730,15 +946,27 @@ function App() {
             <p className="panel-kicker">Topics</p>
             <h2>Choose a syllabus topic</h2>
           </div>
-          {selectedSummary ? <div className="topic-badge">{selectedSummary.category} • {selectedSummary.level}</div> : null}
+          {selectedSummary ? (
+            <div className="topic-badge">
+              {selectedSummary.category} • {selectedSummary.level}
+            </div>
+          ) : null}
         </div>
 
-        <div className="topic-selector" role="tablist" aria-label="Physics topics">
+        <div
+          className="topic-selector"
+          role="tablist"
+          aria-label="Physics topics"
+        >
           {topics.map((topic) => (
             <button
               key={topic.id}
               type="button"
-              className={topic.id === selectedTopicId ? 'topic-chip active' : 'topic-chip'}
+              className={
+                topic.id === selectedTopicId
+                  ? "topic-chip active"
+                  : "topic-chip"
+              }
               onClick={() => setSelectedTopicId(topic.id)}
             >
               <span>{topic.title}</span>
@@ -750,7 +978,7 @@ function App() {
         </div>
       </section>
 
-      {portalView === 'learn' && selectedTopic ? (
+      {portalView === "learn" && selectedTopic ? (
         <>
           <section className="content-grid">
             <article className="panel">
@@ -760,14 +988,19 @@ function App() {
                   <h2>{selectedTopic.title}</h2>
                 </div>
                 {isAdmin ? (
-                  <button type="button" className="secondary-button" onClick={handleLoadSelectedIntoAdmin}>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handleLoadSelectedIntoAdmin}
+                  >
                     Edit in admin
                   </button>
                 ) : null}
               </div>
 
               <p className="lesson-meta">
-                {selectedTopic.level} • {selectedTopic.duration} • {selectedTopic.category}
+                {selectedTopic.level} • {selectedTopic.duration} •{" "}
+                {selectedTopic.category}
               </p>
               <p>{selectedTopic.summary}</p>
 
@@ -806,11 +1039,17 @@ function App() {
 
               {isStudent ? (
                 <div className="lesson-actions">
-                  <button type="button" className="primary-button" onClick={handleMarkLessonComplete}>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={handleMarkLessonComplete}
+                  >
                     Mark lesson complete
                   </button>
                   <span className="helper-text">
-                    {currentProgress?.lessonCompleted ? 'Saved as completed.' : 'Completion is saved to your progress.'}
+                    {currentProgress?.lessonCompleted
+                      ? "Saved as completed."
+                      : "Completion is saved to your progress."}
                   </span>
                 </div>
               ) : null}
@@ -829,22 +1068,40 @@ function App() {
               <div className="slider-group">
                 {selectedTopic.simulation.controls.map((control) => (
                   <label key={control.id}>
-                    {control.label}: <strong>{simulationValues[control.id]} {control.unit}</strong>
+                    {control.label}:{" "}
+                    <strong>
+                      {simulationValues[control.id]} {control.unit}
+                    </strong>
                     <input
                       type="range"
                       min={control.min}
                       max={control.max}
                       step={control.step}
-                      value={simulationValues[control.id] ?? control.defaultValue}
-                      onChange={(event) => handleSimulationChange(control.id, event.target.value)}
+                      value={
+                        simulationValues[control.id] ?? control.defaultValue
+                      }
+                      onChange={(event) =>
+                        handleSimulationChange(control.id, event.target.value)
+                      }
                     />
                   </label>
                 ))}
               </div>
 
-              <div className={simulationResults.length > 2 ? 'result-grid three-columns' : 'result-grid'}>
+              <div
+                className={
+                  simulationResults.length > 2
+                    ? "result-grid three-columns"
+                    : "result-grid"
+                }
+              >
                 {simulationResults.map((result) => (
-                  <StatCard key={result.label} label={result.label} value={result.value} accent={result.accent} />
+                  <StatCard
+                    key={result.label}
+                    label={result.label}
+                    value={result.value}
+                    accent={result.accent}
+                  />
                 ))}
               </div>
 
@@ -861,22 +1118,29 @@ function App() {
                   <p className="panel-kicker">Quiz access</p>
                   <h2>{selectedTopic.quiz.title}</h2>
                 </div>
-                {quizResult ? <div className="score-badge">Score: {quizResult.score}/{quizResult.total}</div> : null}
+                {quizResult ? (
+                  <div className="score-badge">
+                    Score: {quizResult.score}/{quizResult.total}
+                  </div>
+                ) : null}
               </div>
 
               {!isStudent ? (
                 <div className="locked-panel">
                   <h3>Quiz content is visible to everyone.</h3>
                   <p>
-                    Log in with a student account to select answers, submit the quiz, and save progress.
+                    Log in with a student account to select answers, submit the
+                    quiz, and save progress.
                   </p>
                 </div>
               ) : null}
 
               <div className="quiz-list">
                 {selectedTopic.quiz.questions.map((question) => {
-                  const selected = selectedAnswers[question.id]
-                  const feedback = quizResult?.feedback?.find((item) => item.questionId === question.id)
+                  const selected = selectedAnswers[question.id];
+                  const feedback = quizResult?.feedback?.find(
+                    (item) => item.questionId === question.id,
+                  );
 
                   return (
                     <article className="question-card" key={question.id}>
@@ -889,8 +1153,14 @@ function App() {
                             key={option}
                             type="button"
                             disabled={!isStudent}
-                            className={selected === option ? 'option-button selected' : 'option-button'}
-                            onClick={() => handleAnswerSelect(question.id, option)}
+                            className={
+                              selected === option
+                                ? "option-button selected"
+                                : "option-button"
+                            }
+                            onClick={() =>
+                              handleAnswerSelect(question.id, option)
+                            }
                           >
                             {option}
                           </button>
@@ -898,34 +1168,55 @@ function App() {
                       </div>
 
                       {feedback ? (
-                        <p className={feedback.isCorrect ? 'feedback correct' : 'feedback incorrect'}>
-                          {feedback.isCorrect ? 'Correct.' : `Correct answer: ${feedback.correctAnswer}.`} {feedback.explanation}
+                        <p
+                          className={
+                            feedback.isCorrect
+                              ? "feedback correct"
+                              : "feedback incorrect"
+                          }
+                        >
+                          {feedback.isCorrect
+                            ? "Correct."
+                            : `Correct answer: ${feedback.correctAnswer}.`}{" "}
+                          {feedback.explanation}
                         </p>
                       ) : null}
                     </article>
-                  )
+                  );
                 })}
               </div>
 
               {isStudent ? (
                 <div className="quiz-actions">
-                  <button type="button" className="primary-button" onClick={handleQuizSubmit}>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={handleQuizSubmit}
+                  >
                     Submit quiz
                   </button>
                   <span className="helper-text">
-                    Latest score: {currentProgress?.lastQuizScore ?? 'No attempt yet'} | Attempts: {currentProgress?.quizAttempts ?? 0}
+                    Latest score:{" "}
+                    {currentProgress?.lastQuizScore ?? "No attempt yet"} |
+                    Attempts: {currentProgress?.quizAttempts ?? 0}
                   </span>
                 </div>
               ) : null}
 
-              {progressMessage ? <p className="info-banner success">{progressMessage}</p> : null}
+              {progressMessage ? (
+                <p className="info-banner success">{progressMessage}</p>
+              ) : null}
             </article>
 
             <article className="panel">
               <div className="panel-heading">
                 <div>
                   <p className="panel-kicker">Progress</p>
-                  <h2>{isStudent ? 'Your learning progress' : 'Progress becomes available after login'}</h2>
+                  <h2>
+                    {isStudent
+                      ? "Your learning progress"
+                      : "Progress becomes available after login"}
+                  </h2>
                 </div>
               </div>
 
@@ -942,13 +1233,16 @@ function App() {
                   />
                   <StatCard
                     label="Current topic score"
-                    value={currentProgress?.lastQuizScore ?? 'Pending'}
+                    value={currentProgress?.lastQuizScore ?? "Pending"}
                   />
                 </div>
               ) : (
                 <div className="locked-panel">
                   <h3>Students can save progress across topics.</h3>
-                  <p>Guest learners can still read every lesson and use every simulation without signing in.</p>
+                  <p>
+                    Guest learners can still read every lesson and use every
+                    simulation without signing in.
+                  </p>
                 </div>
               )}
 
@@ -961,8 +1255,15 @@ function App() {
                         <small>{item.level}</small>
                       </div>
                       <div>
-                        <span>{item.lessonCompleted ? 'Lesson complete' : 'Lesson pending'}</span>
-                        <small>Quiz: {item.lastQuizScore ?? 'No score yet'} | Attempts: {item.quizAttempts}</small>
+                        <span>
+                          {item.lessonCompleted
+                            ? "Lesson complete"
+                            : "Lesson pending"}
+                        </span>
+                        <small>
+                          Quiz: {item.lastQuizScore ?? "No score yet"} |
+                          Attempts: {item.quizAttempts}
+                        </small>
                       </div>
                     </article>
                   ))}
@@ -973,7 +1274,7 @@ function App() {
         </>
       ) : null}
 
-      {portalView === 'admin' && isAdmin ? (
+      {portalView === "admin" && isAdmin ? (
         <>
           <section className="content-grid">
             <article className="panel">
@@ -989,12 +1290,15 @@ function App() {
                   <article className="progress-row" key={student.userId}>
                     <div>
                       <strong>{student.name}</strong>
-                      <small>{student.username} • {student.classLevel}</small>
+                      <small>
+                        {student.username} • {student.classLevel}
+                      </small>
                     </div>
                     <div>
                       <span>{student.completedLessons} lessons complete</span>
                       <small>
-                        Quiz topics: {student.activeQuizTopics} | Last active: {student.lastActivityAt || 'No activity yet'}
+                        Quiz topics: {student.activeQuizTopics} | Last active:{" "}
+                        {student.lastActivityAt || "No activity yet"}
                       </small>
                     </div>
                   </article>
@@ -1011,9 +1315,18 @@ function App() {
               </div>
 
               <ul className="check-list compact">
-                <li>Students cannot see this portal unless they log in as an administrator.</li>
-                <li>Topic create, update, and delete requests go through admin-only backend routes.</li>
-                <li>Lessons stay public while quiz attempts remain tied to student accounts.</li>
+                <li>
+                  Students cannot see this portal unless they log in as an
+                  administrator.
+                </li>
+                <li>
+                  Topic create, update, and delete requests go through
+                  admin-only backend routes.
+                </li>
+                <li>
+                  Lessons stay public while quiz attempts remain tied to student
+                  accounts.
+                </li>
               </ul>
             </article>
           </section>
@@ -1029,28 +1342,40 @@ function App() {
                   type="button"
                   className="secondary-button"
                   onClick={() => {
-                    setAdminForm(createEmptyAdminForm())
-                    setAdminError('')
-                    setAdminMessage('Ready to create a new topic.')
+                    setAdminForm(createEmptyAdminForm());
+                    setAdminError("");
+                    setAdminMessage("Ready to create a new topic.");
                   }}
                 >
                   New topic
                 </button>
-                <button type="button" className="secondary-button" onClick={handleLoadSelectedIntoAdmin}>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleLoadSelectedIntoAdmin}
+                >
                   Load selected topic
                 </button>
               </div>
             </div>
 
-            {adminMessage ? <p className="admin-message success">{adminMessage}</p> : null}
-            {adminError ? <p className="admin-message error">{adminError}</p> : null}
+            {adminMessage ? (
+              <p className="admin-message success">{adminMessage}</p>
+            ) : null}
+            {adminError ? (
+              <p className="admin-message error">{adminError}</p>
+            ) : null}
 
             <div className="admin-topic-strip">
               {topics.map((topic) => (
                 <button
                   key={topic.id}
                   type="button"
-                  className={adminForm.id === topic.id ? 'topic-chip active' : 'topic-chip'}
+                  className={
+                    adminForm.id === topic.id
+                      ? "topic-chip active"
+                      : "topic-chip"
+                  }
                   onClick={() => handleAdminTopicPick(topic.id)}
                 >
                   <span>{topic.title}</span>
@@ -1062,23 +1387,44 @@ function App() {
             <div className="admin-form-grid">
               <label>
                 Topic title
-                <input name="title" value={adminForm.title} onChange={handleAdminFieldChange} />
+                <input
+                  name="title"
+                  value={adminForm.title}
+                  onChange={handleAdminFieldChange}
+                />
               </label>
               <label>
                 Level
-                <input name="level" value={adminForm.level} onChange={handleAdminFieldChange} />
+                <input
+                  name="level"
+                  value={adminForm.level}
+                  onChange={handleAdminFieldChange}
+                />
               </label>
               <label>
                 Duration
-                <input name="duration" value={adminForm.duration} onChange={handleAdminFieldChange} />
+                <input
+                  name="duration"
+                  value={adminForm.duration}
+                  onChange={handleAdminFieldChange}
+                />
               </label>
               <label>
                 Category
-                <input name="category" value={adminForm.category} onChange={handleAdminFieldChange} />
+                <input
+                  name="category"
+                  value={adminForm.category}
+                  onChange={handleAdminFieldChange}
+                />
               </label>
               <label className="full-span">
                 Summary
-                <textarea name="summary" rows="3" value={adminForm.summary} onChange={handleAdminFieldChange} />
+                <textarea
+                  name="summary"
+                  rows="3"
+                  value={adminForm.summary}
+                  onChange={handleAdminFieldChange}
+                />
               </label>
               <label className="full-span">
                 Objectives, one per line
@@ -1100,7 +1446,11 @@ function App() {
               </label>
               <label>
                 Simulation type
-                <select name="simulationType" value={adminForm.simulationType} onChange={handleAdminFieldChange}>
+                <select
+                  name="simulationType"
+                  value={adminForm.simulationType}
+                  onChange={handleAdminFieldChange}
+                >
                   <option value="kinematics">Kinematics</option>
                   <option value="newton-second-law">Newton second law</option>
                   <option value="work-energy">Work and energy</option>
@@ -1111,7 +1461,11 @@ function App() {
               </label>
               <label>
                 Simulation title
-                <input name="simulationTitle" value={adminForm.simulationTitle} onChange={handleAdminFieldChange} />
+                <input
+                  name="simulationTitle"
+                  value={adminForm.simulationTitle}
+                  onChange={handleAdminFieldChange}
+                />
               </label>
               <label className="full-span">
                 Simulation description
@@ -1159,7 +1513,11 @@ function App() {
               </label>
               <label className="full-span">
                 Quiz title
-                <input name="quizTitle" value={adminForm.quizTitle} onChange={handleAdminFieldChange} />
+                <input
+                  name="quizTitle"
+                  value={adminForm.quizTitle}
+                  onChange={handleAdminFieldChange}
+                />
               </label>
               <label className="full-span">
                 Quiz questions JSON
@@ -1173,21 +1531,34 @@ function App() {
             </div>
 
             <div className="admin-actions">
-              <button type="button" className="secondary-button" onClick={handleLoadSimulationTemplate}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleLoadSimulationTemplate}
+              >
                 Load simulation template
               </button>
-              <button type="button" className="primary-button" onClick={() => handleAdminSubmit('create')}>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => handleAdminSubmit("create")}
+              >
                 Save as new topic
               </button>
               <button
                 type="button"
                 className="primary-button muted-button"
                 disabled={!adminForm.id}
-                onClick={() => handleAdminSubmit('update')}
+                onClick={() => handleAdminSubmit("update")}
               >
                 Update topic
               </button>
-              <button type="button" className="danger-button" disabled={!adminForm.id} onClick={handleDeleteTopic}>
+              <button
+                type="button"
+                className="danger-button"
+                disabled={!adminForm.id}
+                onClick={handleDeleteTopic}
+              >
                 Delete topic
               </button>
             </div>
@@ -1195,7 +1566,7 @@ function App() {
         </>
       ) : null}
     </main>
-  )
+  );
 }
 
-export default App
+export default App;
