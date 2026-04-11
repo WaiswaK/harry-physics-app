@@ -79,12 +79,14 @@ VITE_API_URL=https://your-backend-project.vercel.app
 - Root Directory: `server`
 - Framework Preset: `Other`
 - Vercel routing is prepared by `server/api/index.js` and `server/vercel.json`
+- The backend deploy runs `npm run vercel-build`, which creates tables and seeds Neon before the API goes live
 - Environment variables:
 
 ```env
 DATABASE_URL=postgres://...
 FRONTEND_ORIGIN=https://your-frontend-project.vercel.app
 PGSSL=require
+SEED_ON_BOOT=false
 ```
 
 ## Production database
@@ -95,6 +97,26 @@ For Vercel hosting, use a managed PostgreSQL provider and set `DATABASE_URL` in 
 - Neon
 - Supabase Postgres
 - Railway Postgres
+
+For Neon on Vercel, use the pooled connection string from the Neon dashboard so the serverless API can reuse connections efficiently. Neon requires SSL, so either keep `sslmode=require` in the connection string or set `PGSSL=require`.
+
+## Seeding Neon
+
+The backend seed is idempotent, so redeploying will update the starter topics and demo users instead of duplicating them.
+
+To seed Neon manually:
+
+```bash
+cd server
+DATABASE_URL="your-neon-connection-string" PGSSL=require npm run seed
+```
+
+To seed during Vercel deployment:
+
+- Create the backend Vercel project with `server` as the root directory
+- Add the Neon `DATABASE_URL`
+- Add `FRONTEND_ORIGIN`, `PGSSL=require`, and `SEED_ON_BOOT=false`
+- Deploy; the backend build step will create the schema and seed the starter data automatically
 
 ## Access rules
 

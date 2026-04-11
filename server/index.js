@@ -314,7 +314,10 @@ app.use((error, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-const ready = ensureDatabase();
+const shouldSeedOnBoot =
+  process.env.SEED_ON_BOOT === "true" ||
+  (!process.env.VERCEL && process.env.NODE_ENV !== "production");
+const ready = ensureDatabase({ seed: shouldSeedOnBoot });
 
 async function startServer() {
   await ready;

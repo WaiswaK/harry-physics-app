@@ -2,15 +2,41 @@ const crypto = require("crypto");
 const { Pool } = require("pg");
 const { topics: seedTopics, users: seedUsers } = require("./seedData");
 
+function requiresSsl(connectionString = "") {
+  try {
+    const url = new URL(connectionString);
+    const sslMode = (url.searchParams.get("sslmode") || "").toLowerCase();
+    return ["require", "verify-ca", "verify-full"].includes(sslMode);
+  } catch {
+    return false;
+  }
+}
+
+function buildDatabaseLabel() {
+  if (!process.env.DATABASE_URL) {
+    return `postgres://${connectionConfig.user}@${connectionConfig.host}:${connectionConfig.port}/${connectionConfig.database}`;
+  }
+
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    return `${url.hostname}${url.pathname}`;
+  } catch {
+    return "managed-postgres";
+  }
+}
+
+const shouldUseSsl =
+  process.env.PGSSL === "require" ||
+  (process.env.DATABASE_URL ? requiresSsl(process.env.DATABASE_URL) : false);
+
 const connectionConfig = process.env.DATABASE_URL
   ? {
       connectionString: process.env.DATABASE_URL,
-      ssl:
-        process.env.PGSSL === "require"
-          ? {
-              rejectUnauthorized: false,
-            }
-          : undefined,
+      ssl: shouldUseSsl
+        ? {
+            rejectUnauthorized: false,
+          }
+        : undefined,
     }
   : {
       host: process.env.PGHOST || "localhost",
@@ -21,9 +47,7 @@ const connectionConfig = process.env.DATABASE_URL
     };
 
 const pool = new Pool(connectionConfig);
-const dbFile =
-  process.env.DATABASE_URL ||
-  `postgres://${connectionConfig.user}@${connectionConfig.host}:${connectionConfig.port}/${connectionConfig.database}`;
+const dbFile = buildDatabaseLabel();
 
 function now() {
   return new Date().toISOString();
@@ -241,7 +265,7 @@ async function seedUser(user) {
   );
 }
 
-async function ensureDatabase() {
+async function migrateDatabase() {
   await query("SELECT 1;");
 
   await query(`
@@ -305,7 +329,9 @@ async function ensureDatabase() {
       created_at TIMESTAMPTZ NOT NULL
     );
   `);
+}
 
+async function seedDatabase() {
   for (const topic of seedTopics) {
     await seedTopic(topic);
   }
@@ -313,6 +339,30 @@ async function ensureDatabase() {
   for (const user of seedUsers) {
     await seedUser(user);
   }
+
+  return {
+    topicsSeeded: seedTopics.length,
+    usersSeeded: seedUsers.length,
+  };
+}
+
+async function ensureDatabase(options = {}) {
+  const { seed = true } = options;
+
+  await migrateDatabase();
+
+  if (!seed) {
+    return {
+      topicsSeeded: 0,
+      usersSeeded: 0,
+    };
+  }
+
+  return seedDatabase();
+}
+
+async function closeDatabase() {
+  await pool.end();
 }
 
 async function getTopicSummaries() {
@@ -596,7 +646,10 @@ async function getAllStudentProgress() {
 
 module.exports = {
   dbFile,
+  migrateDatabase,
+  seedDatabase,
   ensureDatabase,
+  closeDatabase,
   getTopicSummaries,
   getTopicById,
   saveTopic,

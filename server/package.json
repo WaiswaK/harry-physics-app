@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "seed": "node seed.js",
+    "vercel-build": "node seed.js",
     "test": "echo \"No backend tests yet\""
   },
   "keywords": [],
