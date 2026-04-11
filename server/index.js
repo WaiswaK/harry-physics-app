@@ -56,6 +56,18 @@ function readToken(req) {
   return header.slice("Bearer ".length).trim();
 }
 
+async function buildApiStatusPayload() {
+  const topics = await getTopicSummaries();
+
+  return {
+    message: "API is running successfully.",
+    timestamp: new Date().toISOString(),
+    modules: ["topics", "student-progress", "auth", "admin-portal"],
+    topicCount: topics.length,
+    database: dbFile,
+  };
+}
+
 const authRequired = asyncHandler(async (req, res, next) => {
   const token = readToken(req);
 
@@ -97,17 +109,23 @@ const adminRequired = asyncHandler(async (req, res, next) => {
 });
 
 app.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    res.json(await buildApiStatusPayload());
+  }),
+);
+
+app.get(
+  "/api",
+  asyncHandler(async (req, res) => {
+    res.json(await buildApiStatusPayload());
+  }),
+);
+
+app.get(
   "/api/hello",
   asyncHandler(async (req, res) => {
-    const topics = await getTopicSummaries();
-
-    res.json({
-      message: "Harry Physics API is ready with PostgreSQL lessons, progress tracking, and admin management.",
-      timestamp: new Date().toISOString(),
-      modules: ["topics", "student-progress", "auth", "admin-portal"],
-      topicCount: topics.length,
-      database: dbFile,
-    });
+    res.json(await buildApiStatusPayload());
   }),
 );
 
