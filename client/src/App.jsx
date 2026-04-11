@@ -404,6 +404,8 @@ function App() {
     'Student: aisha / student123',
     'Student: brian / student123',
     'Student: claire / student123',
+    'Student: daniel / student123',
+    'Student: esther / student123',
   ]
 
   async function refreshTopics(focusTopicId) {
@@ -881,56 +883,57 @@ function App() {
 
               {!isStudent ? (
                 <div className="locked-panel">
-                  <h3>Log in with a student account to attempt quizzes.</h3>
+                  <h3>Quiz content is visible to everyone.</h3>
                   <p>
-                    Lessons and simulations stay open to everyone, but quiz attempts are saved only for logged-in students.
+                    Log in with a student account to select answers, submit the quiz, and save progress.
                   </p>
                 </div>
-              ) : (
-                <>
-                  <div className="quiz-list">
-                    {selectedTopic.quiz.questions.map((question) => {
-                      const selected = selectedAnswers[question.id]
-                      const feedback = quizResult?.feedback?.find((item) => item.questionId === question.id)
+              ) : null}
 
-                      return (
-                        <article className="question-card" key={question.id}>
-                          <p className="question-label">Question {question.id}</p>
-                          <h3>{question.prompt}</h3>
+              <div className="quiz-list">
+                {selectedTopic.quiz.questions.map((question) => {
+                  const selected = selectedAnswers[question.id]
+                  const feedback = quizResult?.feedback?.find((item) => item.questionId === question.id)
 
-                          <div className="options-grid">
-                            {question.options.map((option) => (
-                              <button
-                                key={option}
-                                type="button"
-                                className={selected === option ? 'option-button selected' : 'option-button'}
-                                onClick={() => handleAnswerSelect(question.id, option)}
-                              >
-                                {option}
-                              </button>
-                            ))}
-                          </div>
+                  return (
+                    <article className="question-card" key={question.id}>
+                      <p className="question-label">Question {question.id}</p>
+                      <h3>{question.prompt}</h3>
 
-                          {feedback ? (
-                            <p className={feedback.isCorrect ? 'feedback correct' : 'feedback incorrect'}>
-                              {feedback.isCorrect ? 'Correct.' : `Correct answer: ${feedback.correctAnswer}.`} {feedback.explanation}
-                            </p>
-                          ) : null}
-                        </article>
-                      )
-                    })}
-                  </div>
+                      <div className="options-grid">
+                        {question.options.map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            disabled={!isStudent}
+                            className={selected === option ? 'option-button selected' : 'option-button'}
+                            onClick={() => handleAnswerSelect(question.id, option)}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
 
-                  <div className="quiz-actions">
-                    <button type="button" className="primary-button" onClick={handleQuizSubmit}>
-                      Submit quiz
-                    </button>
-                    <span className="helper-text">
-                      Latest score: {currentProgress?.lastQuizScore ?? 'No attempt yet'} | Attempts: {currentProgress?.quizAttempts ?? 0}
-                    </span>
-                  </div>
-                </>
-              )}
+                      {feedback ? (
+                        <p className={feedback.isCorrect ? 'feedback correct' : 'feedback incorrect'}>
+                          {feedback.isCorrect ? 'Correct.' : `Correct answer: ${feedback.correctAnswer}.`} {feedback.explanation}
+                        </p>
+                      ) : null}
+                    </article>
+                  )
+                })}
+              </div>
+
+              {isStudent ? (
+                <div className="quiz-actions">
+                  <button type="button" className="primary-button" onClick={handleQuizSubmit}>
+                    Submit quiz
+                  </button>
+                  <span className="helper-text">
+                    Latest score: {currentProgress?.lastQuizScore ?? 'No attempt yet'} | Attempts: {currentProgress?.quizAttempts ?? 0}
+                  </span>
+                </div>
+              ) : null}
 
               {progressMessage ? <p className="info-banner success">{progressMessage}</p> : null}
             </article>

@@ -1,35 +1,29 @@
-const fs = require("fs");
-const path = require("path");
 const crypto = require("crypto");
-const { execFileSync } = require("child_process");
+const { Pool } = require("pg");
 const { topics: seedTopics, users: seedUsers } = require("./seedData");
 
-const dataDir = path.join(__dirname, "data");
-const dbFile = path.join(dataDir, "harry-physics.db");
+const connectionConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl:
+        process.env.PGSSL === "require"
+          ? {
+              rejectUnauthorized: false,
+            }
+          : undefined,
+    }
+  : {
+      host: process.env.PGHOST || "localhost",
+      port: Number(process.env.PGPORT || 5432),
+      user: process.env.PGUSER || "postgres",
+      password: process.env.PGPASSWORD || "postgres",
+      database: process.env.PGDATABASE || "harry_physics_app",
+    };
 
-function sqlValue(value) {
-  if (value === null || value === undefined) {
-    return "NULL";
-  }
-
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? String(value) : "NULL";
-  }
-
-  return `'${String(value).replace(/'/g, "''")}'`;
-}
-
-function runSql(sql, options = {}) {
-  const args = [];
-
-  if (options.json) {
-    args.push("-json");
-  }
-
-  args.push(dbFile, sql);
-  const output = execFileSync("sqlite3", args, { encoding: "utf8" });
-  return options.json ? JSON.parse(output || "[]") : output;
-}
+const pool = new Pool(connectionConfig);
+const dbFile =
+  process.env.DATABASE_URL ||
+  `postgres://${connectionConfig.user}@${connectionConfig.host}:${connectionConfig.port}/${connectionConfig.database}`;
 
 function now() {
   return new Date().toISOString();
@@ -161,24 +155,12 @@ function hashPassword(password) {
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
-function serializeTopic(topic) {
-  return `(
-    ${sqlValue(topic.id)},
-    ${sqlValue(topic.slug)},
-    ${sqlValue(topic.title)},
-    ${sqlValue(topic.level)},
-    ${sqlValue(topic.duration)},
-    ${sqlValue(topic.category)},
-    ${sqlValue(topic.summary)},
-    ${sqlValue(JSON.stringify(topic.objectives))},
-    ${sqlValue(JSON.stringify(topic.lesson))},
-    ${sqlValue(JSON.stringify(topic.simulation))},
-    ${sqlValue(JSON.stringify(topic.quiz))},
-    ${sqlValue(topic.updatedAt || now())}
-  )`;
+async function query(text, params = []) {
+  const result = await pool.query(text, params);
+  return result.rows;
 }
 
-function parseTopicRow(row) {
+function mapTopicRow(row) {
   return {
     id: row.id,
     slug: row.slug,
@@ -187,20 +169,82 @@ function parseTopicRow(row) {
     duration: row.duration,
     category: row.category,
     summary: row.summary,
-    objectives: JSON.parse(row.objectives_json),
-    lesson: JSON.parse(row.lesson_json),
-    simulation: JSON.parse(row.simulation_json),
-    quiz: JSON.parse(row.quiz_json),
+    objectives: row.objectives_json,
+    lesson: row.lesson_json,
+    simulation: row.simulation_json,
+    quiz: row.quiz_json,
     updatedAt: row.updated_at,
   };
 }
 
-function ensureDatabase() {
-  fs.mkdirSync(dataDir, { recursive: true });
+async function seedTopic(topic) {
+  const normalized = normalizeTopicInput(topic, topic.id);
 
-  runSql(`
-    PRAGMA foreign_keys = ON;
+  await query(
+    `
+      INSERT INTO topics (
+        id, slug, title, level, duration, category, summary,
+        objectives_json, lesson_json, simulation_json, quiz_json, updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12)
+      ON CONFLICT (id) DO UPDATE SET
+        slug = EXCLUDED.slug,
+        title = EXCLUDED.title,
+        level = EXCLUDED.level,
+        duration = EXCLUDED.duration,
+        category = EXCLUDED.category,
+        summary = EXCLUDED.summary,
+        objectives_json = EXCLUDED.objectives_json,
+        lesson_json = EXCLUDED.lesson_json,
+        simulation_json = EXCLUDED.simulation_json,
+        quiz_json = EXCLUDED.quiz_json,
+        updated_at = EXCLUDED.updated_at;
+    `,
+    [
+      normalized.id,
+      normalized.slug,
+      normalized.title,
+      normalized.level,
+      normalized.duration,
+      normalized.category,
+      normalized.summary,
+      JSON.stringify(normalized.objectives),
+      JSON.stringify(normalized.lesson),
+      JSON.stringify(normalized.simulation),
+      JSON.stringify(normalized.quiz),
+      normalized.updatedAt,
+    ],
+  );
+}
 
+async function seedUser(user) {
+  await query(
+    `
+      INSERT INTO users (id, name, username, password_hash, role, class_level, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        username = EXCLUDED.username,
+        password_hash = EXCLUDED.password_hash,
+        role = EXCLUDED.role,
+        class_level = EXCLUDED.class_level;
+    `,
+    [
+      user.id,
+      user.name,
+      user.username,
+      hashPassword(user.password),
+      user.role,
+      user.classLevel,
+      now(),
+    ],
+  );
+}
+
+async function ensureDatabase() {
+  await query("SELECT 1;");
+
+  await query(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -208,16 +252,19 @@ function ensureDatabase() {
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL CHECK(role IN ('admin', 'student')),
       class_level TEXT NOT NULL,
-      created_at TEXT NOT NULL
+      created_at TIMESTAMPTZ NOT NULL
     );
+  `);
 
+  await query(`
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL
     );
+  `);
 
+  await query(`
     CREATE TABLE IF NOT EXISTS topics (
       id TEXT PRIMARY KEY,
       slug TEXT NOT NULL UNIQUE,
@@ -226,65 +273,50 @@ function ensureDatabase() {
       duration TEXT NOT NULL,
       category TEXT NOT NULL,
       summary TEXT NOT NULL,
-      objectives_json TEXT NOT NULL,
-      lesson_json TEXT NOT NULL,
-      simulation_json TEXT NOT NULL,
-      quiz_json TEXT NOT NULL,
-      updated_at TEXT NOT NULL
+      objectives_json JSONB NOT NULL,
+      lesson_json JSONB NOT NULL,
+      simulation_json JSONB NOT NULL,
+      quiz_json JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL
     );
+  `);
 
+  await query(`
     CREATE TABLE IF NOT EXISTS lesson_progress (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      topic_id TEXT NOT NULL,
-      lesson_completed INTEGER NOT NULL DEFAULT 0,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      topic_id TEXT NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+      lesson_completed BOOLEAN NOT NULL DEFAULT FALSE,
       last_quiz_score INTEGER,
       quiz_attempts INTEGER NOT NULL DEFAULT 0,
-      last_activity_at TEXT NOT NULL,
-      UNIQUE(user_id, topic_id),
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(topic_id) REFERENCES topics(id) ON DELETE CASCADE
+      last_activity_at TIMESTAMPTZ NOT NULL,
+      UNIQUE(user_id, topic_id)
     );
+  `);
 
+  await query(`
     CREATE TABLE IF NOT EXISTS quiz_attempts (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      topic_id TEXT NOT NULL,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      topic_id TEXT NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
       score INTEGER NOT NULL,
       total_questions INTEGER NOT NULL,
-      answers_json TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(topic_id) REFERENCES topics(id) ON DELETE CASCADE
+      answers_json JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL
     );
   `);
 
-  const seedTopicValues = seedTopics.map((topic) => serializeTopic(normalizeTopicInput(topic, topic.id))).join(",\n");
-  runSql(`
-    INSERT OR IGNORE INTO topics (
-      id, slug, title, level, duration, category, summary,
-      objectives_json, lesson_json, simulation_json, quiz_json, updated_at
-    ) VALUES ${seedTopicValues};
-  `);
+  for (const topic of seedTopics) {
+    await seedTopic(topic);
+  }
 
   for (const user of seedUsers) {
-    runSql(`
-      INSERT OR IGNORE INTO users (id, name, username, password_hash, role, class_level, created_at)
-      VALUES (
-        ${sqlValue(user.id)},
-        ${sqlValue(user.name)},
-        ${sqlValue(user.username)},
-        ${sqlValue(hashPassword(user.password))},
-        ${sqlValue(user.role)},
-        ${sqlValue(user.classLevel)},
-        ${sqlValue(now())}
-      );
-    `);
+    await seedUser(user);
   }
 }
 
-function getTopicSummaries() {
-  return runSql(
+async function getTopicSummaries() {
+  return query(
     `
       SELECT
         id,
@@ -294,213 +326,271 @@ function getTopicSummaries() {
         duration,
         category,
         summary,
-        json_array_length(quiz_json, '$.questions') AS quizCount
+        jsonb_array_length(quiz_json -> 'questions') AS "quizCount"
       FROM topics
       ORDER BY level, title;
     `,
-    { json: true },
   );
 }
 
-function getTopics() {
-  return runSql("SELECT * FROM topics ORDER BY level, title;", { json: true }).map(parseTopicRow);
-}
-
-function getTopicById(id) {
-  const rows = runSql(
-    `SELECT * FROM topics WHERE id = ${sqlValue(id)} OR slug = ${sqlValue(id)} LIMIT 1;`,
-    { json: true },
+async function getTopicById(id) {
+  const rows = await query(
+    `
+      SELECT *
+      FROM topics
+      WHERE id = $1 OR slug = $1
+      LIMIT 1;
+    `,
+    [id],
   );
-  return rows[0] ? parseTopicRow(rows[0]) : null;
+
+  return rows[0] ? mapTopicRow(rows[0]) : null;
 }
 
-function saveTopic(topic, mode) {
+async function saveTopic(topic, mode) {
   const normalized = normalizeTopicInput(topic, mode === "update" ? topic.id : undefined);
 
   if (mode === "create") {
-    runSql(`
-      INSERT INTO topics (
-        id, slug, title, level, duration, category, summary,
-        objectives_json, lesson_json, simulation_json, quiz_json, updated_at
-      ) VALUES ${serializeTopic(normalized)};
-    `);
-    return normalized;
+    const rows = await query(
+      `
+        INSERT INTO topics (
+          id, slug, title, level, duration, category, summary,
+          objectives_json, lesson_json, simulation_json, quiz_json, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12)
+        RETURNING *;
+      `,
+      [
+        normalized.id,
+        normalized.slug,
+        normalized.title,
+        normalized.level,
+        normalized.duration,
+        normalized.category,
+        normalized.summary,
+        JSON.stringify(normalized.objectives),
+        JSON.stringify(normalized.lesson),
+        JSON.stringify(normalized.simulation),
+        JSON.stringify(normalized.quiz),
+        normalized.updatedAt,
+      ],
+    );
+
+    return mapTopicRow(rows[0]);
   }
 
-  runSql(`
-    UPDATE topics
-    SET
-      slug = ${sqlValue(normalized.slug)},
-      title = ${sqlValue(normalized.title)},
-      level = ${sqlValue(normalized.level)},
-      duration = ${sqlValue(normalized.duration)},
-      category = ${sqlValue(normalized.category)},
-      summary = ${sqlValue(normalized.summary)},
-      objectives_json = ${sqlValue(JSON.stringify(normalized.objectives))},
-      lesson_json = ${sqlValue(JSON.stringify(normalized.lesson))},
-      simulation_json = ${sqlValue(JSON.stringify(normalized.simulation))},
-      quiz_json = ${sqlValue(JSON.stringify(normalized.quiz))},
-      updated_at = ${sqlValue(normalized.updatedAt)}
-    WHERE id = ${sqlValue(topic.id)};
-  `);
-
-  return normalized;
-}
-
-function deleteTopic(id) {
-  runSql(`DELETE FROM topics WHERE id = ${sqlValue(id)} OR slug = ${sqlValue(id)};`);
-}
-
-function getUserByUsername(username) {
-  const rows = runSql(
-    `SELECT id, name, username, password_hash, role, class_level, created_at FROM users WHERE username = ${sqlValue(username)} LIMIT 1;`,
-    { json: true },
+  const rows = await query(
+    `
+      UPDATE topics
+      SET
+        slug = $2,
+        title = $3,
+        level = $4,
+        duration = $5,
+        category = $6,
+        summary = $7,
+        objectives_json = $8::jsonb,
+        lesson_json = $9::jsonb,
+        simulation_json = $10::jsonb,
+        quiz_json = $11::jsonb,
+        updated_at = $12
+      WHERE id = $1
+      RETURNING *;
+    `,
+    [
+      topic.id,
+      normalized.slug,
+      normalized.title,
+      normalized.level,
+      normalized.duration,
+      normalized.category,
+      normalized.summary,
+      JSON.stringify(normalized.objectives),
+      JSON.stringify(normalized.lesson),
+      JSON.stringify(normalized.simulation),
+      JSON.stringify(normalized.quiz),
+      normalized.updatedAt,
+    ],
   );
+
+  return rows[0] ? mapTopicRow(rows[0]) : null;
+}
+
+async function deleteTopic(id) {
+  await query(`DELETE FROM topics WHERE id = $1 OR slug = $1;`, [id]);
+}
+
+async function getUserByUsername(username) {
+  const rows = await query(
+    `
+      SELECT id, name, username, password_hash, role, class_level, created_at
+      FROM users
+      WHERE username = $1
+      LIMIT 1;
+    `,
+    [username],
+  );
+
   return rows[0] || null;
 }
 
-function getSafeUserById(userId) {
-  const rows = runSql(
-    `SELECT id, name, username, role, class_level AS classLevel, created_at AS createdAt FROM users WHERE id = ${sqlValue(userId)} LIMIT 1;`,
-    { json: true },
+async function getSafeUserById(userId) {
+  const rows = await query(
+    `
+      SELECT
+        id,
+        name,
+        username,
+        role,
+        class_level AS "classLevel",
+        created_at AS "createdAt"
+      FROM users
+      WHERE id = $1
+      LIMIT 1;
+    `,
+    [userId],
   );
+
   return rows[0] || null;
 }
 
-function createSession(userId) {
+async function createSession(userId) {
   const token = crypto.randomUUID();
-  runSql(`
-    INSERT INTO sessions (token, user_id, created_at)
-    VALUES (${sqlValue(token)}, ${sqlValue(userId)}, ${sqlValue(now())});
-  `);
+
+  await query(
+    `
+      INSERT INTO sessions (token, user_id, created_at)
+      VALUES ($1, $2, $3);
+    `,
+    [token, userId, now()],
+  );
+
   return token;
 }
 
-function getUserByToken(token) {
-  const rows = runSql(
+async function getUserByToken(token) {
+  const rows = await query(
     `
       SELECT
         u.id,
         u.name,
         u.username,
         u.role,
-        u.class_level AS classLevel,
-        u.created_at AS createdAt
+        u.class_level AS "classLevel",
+        u.created_at AS "createdAt"
       FROM sessions s
       JOIN users u ON u.id = s.user_id
-      WHERE s.token = ${sqlValue(token)}
+      WHERE s.token = $1
       LIMIT 1;
     `,
-    { json: true },
+    [token],
   );
 
   return rows[0] || null;
 }
 
-function deleteSession(token) {
-  runSql(`DELETE FROM sessions WHERE token = ${sqlValue(token)};`);
+async function deleteSession(token) {
+  await query(`DELETE FROM sessions WHERE token = $1;`, [token]);
 }
 
-function upsertLessonProgress(userId, topicId, changes) {
-  const existingRows = runSql(
+async function upsertLessonProgress(userId, topicId, changes) {
+  const existingRows = await query(
     `
       SELECT id, lesson_completed, last_quiz_score, quiz_attempts
       FROM lesson_progress
-      WHERE user_id = ${sqlValue(userId)} AND topic_id = ${sqlValue(topicId)}
+      WHERE user_id = $1 AND topic_id = $2
       LIMIT 1;
     `,
-    { json: true },
+    [userId, topicId],
   );
 
   const existing = existingRows[0];
   const next = {
     id: existing?.id || crypto.randomUUID(),
-    lesson_completed: changes.lessonCompleted ?? existing?.lesson_completed ?? 0,
-    last_quiz_score: changes.lastQuizScore ?? existing?.last_quiz_score ?? null,
-    quiz_attempts: changes.incrementAttempts
+    lessonCompleted: changes.lessonCompleted ?? existing?.lesson_completed ?? false,
+    lastQuizScore: changes.lastQuizScore ?? existing?.last_quiz_score ?? null,
+    quizAttempts: changes.incrementAttempts
       ? Number(existing?.quiz_attempts || 0) + 1
       : Number(existing?.quiz_attempts || 0),
-    last_activity_at: now(),
+    lastActivityAt: now(),
   };
 
-  runSql(`
-    INSERT INTO lesson_progress (
-      id, user_id, topic_id, lesson_completed, last_quiz_score, quiz_attempts, last_activity_at
-    ) VALUES (
-      ${sqlValue(next.id)},
-      ${sqlValue(userId)},
-      ${sqlValue(topicId)},
-      ${sqlValue(next.lesson_completed)},
-      ${sqlValue(next.last_quiz_score)},
-      ${sqlValue(next.quiz_attempts)},
-      ${sqlValue(next.last_activity_at)}
-    )
-    ON CONFLICT(user_id, topic_id) DO UPDATE SET
-      lesson_completed = excluded.lesson_completed,
-      last_quiz_score = excluded.last_quiz_score,
-      quiz_attempts = excluded.quiz_attempts,
-      last_activity_at = excluded.last_activity_at;
-  `);
+  await query(
+    `
+      INSERT INTO lesson_progress (
+        id, user_id, topic_id, lesson_completed, last_quiz_score, quiz_attempts, last_activity_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (user_id, topic_id) DO UPDATE SET
+        lesson_completed = EXCLUDED.lesson_completed,
+        last_quiz_score = EXCLUDED.last_quiz_score,
+        quiz_attempts = EXCLUDED.quiz_attempts,
+        last_activity_at = EXCLUDED.last_activity_at;
+    `,
+    [
+      next.id,
+      userId,
+      topicId,
+      next.lessonCompleted,
+      next.lastQuizScore,
+      next.quizAttempts,
+      next.lastActivityAt,
+    ],
+  );
 }
 
-function recordQuizAttempt(userId, topicId, answers, score, totalQuestions) {
-  runSql(`
-    INSERT INTO quiz_attempts (id, user_id, topic_id, score, total_questions, answers_json, created_at)
-    VALUES (
-      ${sqlValue(crypto.randomUUID())},
-      ${sqlValue(userId)},
-      ${sqlValue(topicId)},
-      ${sqlValue(score)},
-      ${sqlValue(totalQuestions)},
-      ${sqlValue(JSON.stringify(answers))},
-      ${sqlValue(now())}
-    );
-  `);
+async function recordQuizAttempt(userId, topicId, answers, score, totalQuestions) {
+  await query(
+    `
+      INSERT INTO quiz_attempts (id, user_id, topic_id, score, total_questions, answers_json, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7);
+    `,
+    [crypto.randomUUID(), userId, topicId, score, totalQuestions, JSON.stringify(answers), now()],
+  );
 
-  upsertLessonProgress(userId, topicId, {
+  await upsertLessonProgress(userId, topicId, {
     lastQuizScore: score,
     incrementAttempts: true,
   });
 }
 
-function getStudentProgress(userId) {
-  return runSql(
+async function getStudentProgress(userId) {
+  return query(
     `
       SELECT
-        t.id AS topicId,
-        t.title AS topicTitle,
+        t.id AS "topicId",
+        t.title AS "topicTitle",
         t.level,
-        COALESCE(lp.lesson_completed, 0) AS lessonCompleted,
-        lp.last_quiz_score AS lastQuizScore,
-        COALESCE(lp.quiz_attempts, 0) AS quizAttempts,
-        lp.last_activity_at AS lastActivityAt
+        COALESCE(lp.lesson_completed, FALSE) AS "lessonCompleted",
+        lp.last_quiz_score AS "lastQuizScore",
+        COALESCE(lp.quiz_attempts, 0) AS "quizAttempts",
+        lp.last_activity_at AS "lastActivityAt"
       FROM topics t
       LEFT JOIN lesson_progress lp
-        ON lp.topic_id = t.id AND lp.user_id = ${sqlValue(userId)}
+        ON lp.topic_id = t.id AND lp.user_id = $1
       ORDER BY t.level, t.title;
     `,
-    { json: true },
+    [userId],
   );
 }
 
-function getAllStudentProgress() {
-  return runSql(
+async function getAllStudentProgress() {
+  return query(
     `
       SELECT
-        u.id AS userId,
+        u.id AS "userId",
         u.name,
         u.username,
-        u.class_level AS classLevel,
-        COUNT(CASE WHEN lp.lesson_completed = 1 THEN 1 END) AS completedLessons,
-        COUNT(CASE WHEN lp.quiz_attempts > 0 THEN 1 END) AS activeQuizTopics,
-        MAX(lp.last_activity_at) AS lastActivityAt
+        u.class_level AS "classLevel",
+        COUNT(*) FILTER (WHERE lp.lesson_completed = TRUE) AS "completedLessons",
+        COUNT(*) FILTER (WHERE lp.quiz_attempts > 0) AS "activeQuizTopics",
+        MAX(lp.last_activity_at) AS "lastActivityAt"
       FROM users u
       LEFT JOIN lesson_progress lp ON lp.user_id = u.id
       WHERE u.role = 'student'
       GROUP BY u.id, u.name, u.username, u.class_level
       ORDER BY u.name;
     `,
-    { json: true },
   );
 }
 
@@ -508,7 +598,6 @@ module.exports = {
   dbFile,
   ensureDatabase,
   getTopicSummaries,
-  getTopics,
   getTopicById,
   saveTopic,
   deleteTopic,
@@ -522,6 +611,5 @@ module.exports = {
   getStudentProgress,
   getAllStudentProgress,
   validateTopicInput,
-  normalizeTopicInput,
   hashPassword,
 };

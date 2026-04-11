@@ -507,6 +507,347 @@ const topics = [
       ],
     },
   },
+  {
+    id: "vertical-motion",
+    title: "Vertical Motion Under Gravity",
+    slug: "vertical-motion",
+    level: "Senior 2",
+    duration: "14 min",
+    category: "Mechanics",
+    summary:
+      "Explore upward and downward motion using initial velocity, gravity, and time.",
+    objectives: [
+      "Relate acceleration due to gravity to vertical motion",
+      "Predict how velocity changes as an object rises or falls",
+      "Apply constant-acceleration equations to vertical motion",
+    ],
+    lesson: {
+      overview:
+        "Vertical motion is a special case of straight-line motion where acceleration is usually downward because of gravity. Learners connect the equations to throwing a ball upward and watching it slow, stop, and return.",
+      concepts: [
+        "Objects moving upward against gravity lose speed until velocity becomes zero at the highest point.",
+        "Gravity provides a nearly constant downward acceleration near the Earth's surface.",
+        "The same constant-acceleration equations work for vertical motion when sign convention is handled carefully.",
+      ],
+      activities: [
+        "Set a positive initial velocity and compare the final velocity after different times.",
+        "Use negative acceleration to model gravity and observe the displacement change.",
+        "Discuss how a dropped stone differs from a thrown ball.",
+      ],
+    },
+    simulation: {
+      type: "kinematics",
+      title: "Vertical Motion Lab",
+      description:
+        "Adjust launch velocity, gravity-style acceleration, and time to inspect motion under gravity.",
+      formulaNote: "Uses s = ut + 1/2at² and v = u + at with downward acceleration.",
+      controls: [
+        {
+          id: "initialVelocity",
+          label: "Launch velocity",
+          unit: "m/s",
+          min: 0,
+          max: 30,
+          step: 1,
+          defaultValue: 18,
+        },
+        {
+          id: "acceleration",
+          label: "Acceleration",
+          unit: "m/s²",
+          min: -12,
+          max: 0,
+          step: 1,
+          defaultValue: -10,
+        },
+        {
+          id: "time",
+          label: "Time",
+          unit: "s",
+          min: 1,
+          max: 8,
+          step: 1,
+          defaultValue: 2,
+        },
+      ],
+    },
+    quiz: {
+      title: "Vertical Motion Check",
+      questions: [
+        {
+          id: 1,
+          prompt: "At the highest point of an upward throw, what is the vertical velocity?",
+          options: ["Zero", "Maximum", "Negative infinity", "Equal to acceleration"],
+          answer: "Zero",
+          explanation: "At the top of the path the object stops rising for an instant, so vertical velocity is zero.",
+        },
+        {
+          id: 2,
+          prompt: "Which quantity remains approximately constant near Earth's surface in free fall?",
+          options: ["Velocity", "Mass", "Acceleration due to gravity", "Displacement"],
+          answer: "Acceleration due to gravity",
+          explanation: "In simple free-fall problems, the gravitational acceleration is treated as constant.",
+        },
+      ],
+    },
+  },
+  {
+    id: "machine-efficiency",
+    title: "Machines, Work, and Efficiency",
+    slug: "machine-efficiency",
+    level: "Senior 3",
+    duration: "15 min",
+    category: "Energy",
+    summary:
+      "Compare useful work, input work, and power to explain why machines are never perfectly efficient.",
+    objectives: [
+      "Relate work output to work input",
+      "Calculate power from work and time",
+      "Explain why machine efficiency is always less than 100 percent",
+    ],
+    lesson: {
+      overview:
+        "Machines make work easier by changing force or direction, but some energy is always lost. Learners connect formulas to pulleys, ramps, and simple school workshop tools.",
+      concepts: [
+        "Efficiency compares useful output to total input.",
+        "Power describes how quickly a machine does work.",
+        "Friction and heat reduce efficiency in real machines.",
+      ],
+      activities: [
+        "Increase force and compare the work done over the same distance.",
+        "Keep work fixed and reduce time to see the effect on power.",
+        "Discuss where wasted energy goes in practical machines.",
+      ],
+    },
+    simulation: {
+      type: "work-energy",
+      title: "Machine Output Explorer",
+      description:
+        "Adjust force, distance, velocity, mass, and time to compare work done and output power in a machine.",
+      formulaNote: "Uses W = Fd, KE = 1/2mv², and P = W/t.",
+      controls: [
+        {
+          id: "force",
+          label: "Force",
+          unit: "N",
+          min: 5,
+          max: 150,
+          step: 5,
+          defaultValue: 40,
+        },
+        {
+          id: "distance",
+          label: "Distance",
+          unit: "m",
+          min: 1,
+          max: 30,
+          step: 1,
+          defaultValue: 6,
+        },
+        {
+          id: "mass",
+          label: "Mass",
+          unit: "kg",
+          min: 1,
+          max: 40,
+          step: 1,
+          defaultValue: 8,
+        },
+        {
+          id: "velocity",
+          label: "Velocity",
+          unit: "m/s",
+          min: 1,
+          max: 18,
+          step: 1,
+          defaultValue: 5,
+        },
+        {
+          id: "time",
+          label: "Time",
+          unit: "s",
+          min: 1,
+          max: 15,
+          step: 1,
+          defaultValue: 3,
+        },
+      ],
+    },
+    quiz: {
+      title: "Machine Efficiency Check",
+      questions: [
+        {
+          id: 1,
+          prompt: "Why is the efficiency of a real machine less than 100 percent?",
+          options: [
+            "Because output work is always larger than input work",
+            "Because some energy is lost as heat or friction",
+            "Because mass becomes zero",
+            "Because distance becomes negative",
+          ],
+          answer: "Because some energy is lost as heat or friction",
+          explanation: "Real machines lose some energy to friction, sound, and heating.",
+        },
+        {
+          id: 2,
+          prompt: "Which expression gives power?",
+          options: ["P = W/t", "P = F/m", "P = V/I", "P = rho g h"],
+          answer: "P = W/t",
+          explanation: "Power is the rate of doing work.",
+        },
+      ],
+    },
+  },
+  {
+    id: "domestic-electric-power",
+    title: "Domestic Electric Power",
+    slug: "domestic-electric-power",
+    level: "Senior 3",
+    duration: "13 min",
+    category: "Electricity",
+    summary:
+      "Relate voltage, resistance, current, and power to appliances used in homes and schools.",
+    objectives: [
+      "Use Ohm's law in practical electrical examples",
+      "Relate electric power to current and voltage",
+      "Explain why high-resistance devices draw less current at constant voltage",
+    ],
+    lesson: {
+      overview:
+        "Domestic electricity links basic circuit relationships to appliances such as irons, kettles, radios, and bulbs. Learners use simple circuit ideas to reason about current, resistance, and power.",
+      concepts: [
+        "Current depends on the available voltage and the resistance of the appliance.",
+        "Electrical power can be found from voltage multiplied by current.",
+        "Devices with low resistance can draw large currents and become dangerous if not protected.",
+      ],
+      activities: [
+        "Change resistance while voltage stays fixed and compare the current.",
+        "Estimate electrical power after calculating current.",
+        "Discuss why fuses and circuit breakers are important.",
+      ],
+    },
+    simulation: {
+      type: "circuits",
+      title: "Appliance Power Bench",
+      description:
+        "Adjust voltage and resistance to estimate current and power for a household appliance.",
+      formulaNote: "Uses I = V / R and P = VI.",
+      controls: [
+        {
+          id: "voltage",
+          label: "Voltage",
+          unit: "V",
+          min: 6,
+          max: 240,
+          step: 6,
+          defaultValue: 120,
+        },
+        {
+          id: "resistance",
+          label: "Resistance",
+          unit: "ohms",
+          min: 2,
+          max: 80,
+          step: 2,
+          defaultValue: 24,
+        },
+      ],
+    },
+    quiz: {
+      title: "Electric Power Check",
+      questions: [
+        {
+          id: 1,
+          prompt: "Which relation gives electric power in a circuit?",
+          options: ["P = VI", "P = ma", "P = rho g h", "P = 1/f"],
+          answer: "P = VI",
+          explanation: "Electrical power is the product of voltage and current.",
+        },
+        {
+          id: 2,
+          prompt: "At constant voltage, what happens to current if resistance increases?",
+          options: ["It increases", "It decreases", "It stays equal to voltage", "It becomes zero immediately"],
+          answer: "It decreases",
+          explanation: "From I = V / R, current falls when resistance rises and voltage stays fixed.",
+        },
+      ],
+    },
+  },
+  {
+    id: "sound-and-pitch",
+    title: "Sound Waves and Pitch",
+    slug: "sound-and-pitch",
+    level: "Senior 1",
+    duration: "10 min",
+    category: "Waves",
+    summary:
+      "Use wave frequency and wavelength ideas to explain pitch and sound transmission.",
+    objectives: [
+      "Link sound pitch to frequency",
+      "Relate wavelength and frequency for waves in the same medium",
+      "Use wave speed relationships in sound examples",
+    ],
+    lesson: {
+      overview:
+        "Sound is a longitudinal wave that can be described using the same wave relationships used for ripples and rope waves. Learners connect pitch and loudness to properties of sound waves.",
+      concepts: [
+        "Higher pitch corresponds to higher frequency.",
+        "For a fixed wave speed, increasing frequency reduces wavelength.",
+        "Sound needs a medium to travel from one place to another.",
+      ],
+      activities: [
+        "Increase frequency and note the effect on period.",
+        "Keep frequency fixed and compare the effect of changing wavelength.",
+        "Discuss why pitch changes when a guitar string is tightened.",
+      ],
+    },
+    simulation: {
+      type: "waves",
+      title: "Pitch and Wave Lab",
+      description:
+        "Adjust frequency and wavelength to compare sound pitch, period, and wave speed.",
+      formulaNote: "Uses v = f lambda and T = 1 / f.",
+      controls: [
+        {
+          id: "frequency",
+          label: "Frequency",
+          unit: "Hz",
+          min: 1,
+          max: 30,
+          step: 1,
+          defaultValue: 8,
+        },
+        {
+          id: "wavelength",
+          label: "Wavelength",
+          unit: "m",
+          min: 1,
+          max: 10,
+          step: 1,
+          defaultValue: 3,
+        },
+      ],
+    },
+    quiz: {
+      title: "Sound Wave Check",
+      questions: [
+        {
+          id: 1,
+          prompt: "What happens to pitch when frequency increases?",
+          options: ["Pitch decreases", "Pitch increases", "Pitch stays constant", "Pitch becomes power"],
+          answer: "Pitch increases",
+          explanation: "Higher frequency sounds are heard as higher pitch.",
+        },
+        {
+          id: 2,
+          prompt: "If wave speed stays constant, what happens to wavelength when frequency rises?",
+          options: ["It increases", "It decreases", "It stays unchanged", "It becomes equal to time"],
+          answer: "It decreases",
+          explanation: "From v = f lambda, wavelength must decrease if frequency increases and speed stays the same.",
+        },
+      ],
+    },
+  },
 ];
 
 const users = [
@@ -541,6 +882,22 @@ const users = [
     password: "student123",
     role: "student",
     classLevel: "Senior 3",
+  },
+  {
+    id: "student-daniel",
+    name: "Daniel Mugisha",
+    username: "daniel",
+    password: "student123",
+    role: "student",
+    classLevel: "Senior 2",
+  },
+  {
+    id: "student-esther",
+    name: "Esther Nanyonjo",
+    username: "esther",
+    password: "student123",
+    role: "student",
+    classLevel: "Senior 1",
   },
 ];
 

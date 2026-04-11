@@ -291,7 +291,8 @@
 
 .secondary-button:disabled,
 .primary-button:disabled,
-.danger-button:disabled {
+.danger-button:disabled,
+.option-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
